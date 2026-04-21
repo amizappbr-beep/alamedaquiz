@@ -1,84 +1,54 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React from "react";
 import "@/App.css";
-import Intro from "./components/Intro";
-import Quiz from "./components/Quiz";
-import LeadForm from "./components/LeadForm";
-import Result from "./components/Result";
-import { classifyAnswers, QUIZ_QUESTIONS } from "./lib/quizData";
-import { Toaster, toast } from "sonner";
+import { Toaster } from "sonner";
+import { JourneyProvider, useJourney } from "./context/JourneyContext";
+import Header from "./components/Header";
+import Hub from "./components/Hub";
+import ModuloEmpreendimento from "./components/modules/ModuloEmpreendimento";
+import ModuloCasas from "./components/modules/ModuloCasas";
+import ModuloPerfil from "./components/modules/ModuloPerfil";
+import ModuloSimulador from "./components/modules/ModuloSimulador";
+import ModuloDiferenciais from "./components/modules/ModuloDiferenciais";
+import ModuloCorretor from "./components/modules/ModuloCorretor";
+import ModuloAgendamento from "./components/modules/ModuloAgendamento";
+import ModuloImediato from "./components/modules/ModuloImediato";
+import ModuloObrigado from "./components/modules/ModuloObrigado";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+function Router() {
+  const { stage } = useJourney();
+  switch (stage) {
+    case "empreendimento":
+      return <ModuloEmpreendimento />;
+    case "casas":
+      return <ModuloCasas />;
+    case "perfil":
+      return <ModuloPerfil />;
+    case "simulador":
+      return <ModuloSimulador />;
+    case "diferenciais":
+      return <ModuloDiferenciais />;
+    case "corretor":
+      return <ModuloCorretor />;
+    case "agendamento":
+      return <ModuloAgendamento />;
+    case "imediato":
+      return <ModuloImediato />;
+    case "obrigado":
+      return <ModuloObrigado />;
+    case "hub":
+    default:
+      return <Hub />;
+  }
+}
 
 export default function App() {
-  const [stage, setStage] = useState("intro"); // intro | quiz | form | result
-  const [answers, setAnswers] = useState({});
-  const [classification, setClassification] = useState(null);
-  const [name, setName] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  const startQuiz = () => setStage("quiz");
-
-  const onQuizComplete = (quizAnswers) => {
-    setAnswers(quizAnswers);
-    setClassification(classifyAnswers(quizAnswers));
-    setStage("form");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const onLeadSubmit = async ({ name: n, phone }) => {
-    setSubmitting(true);
-    const cls = classification || classifyAnswers(answers);
-    const payloadAnswers = QUIZ_QUESTIONS.map((q) => ({
-      question_id: q.id,
-      question: q.prompt,
-      answer: answers[q.id]?.label || "",
-    }));
-    try {
-      await axios.post(`${API}/leads`, {
-        name: n,
-        phone,
-        answers: payloadAnswers,
-        classification: cls,
-      });
-      setName(n);
-      setClassification(cls);
-      setStage("result");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (err) {
-      console.error(err);
-      toast.error("Não conseguimos salvar seus dados agora. Tente novamente.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const restart = () => {
-    setAnswers({});
-    setClassification(null);
-    setName("");
-    setStage("intro");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   return (
     <div className="App" data-testid="app-root">
-      <Toaster position="top-center" richColors />
-      {stage === "intro" && <Intro onStart={startQuiz} />}
-      {stage === "quiz" && (
-        <Quiz onComplete={onQuizComplete} onBack={() => setStage("intro")} />
-      )}
-      {stage === "form" && (
-        <LeadForm onSubmit={onLeadSubmit} submitting={submitting} />
-      )}
-      {stage === "result" && (
-        <Result
-          classification={classification}
-          name={name}
-          onRestart={restart}
-        />
-      )}
+      <JourneyProvider>
+        <Toaster position="top-center" richColors />
+        <Header />
+        <Router />
+      </JourneyProvider>
     </div>
   );
 }

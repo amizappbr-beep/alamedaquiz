@@ -1,4 +1,4 @@
-// Quiz questions and scoring for Alameda 500
+// Quiz questions and scoring for Alameda 500 — Concierge Digital
 
 export const QUIZ_QUESTIONS = [
   {
@@ -66,48 +66,35 @@ export const QUIZ_QUESTIONS = [
 ];
 
 export function classifyAnswers(answers) {
-  // answers: { [questionId]: { value, label, weight } }
   let total = 0;
   Object.values(answers).forEach((a) => {
     total += a?.weight ?? 0;
   });
-  // Max possible = 2+2+3+3+3+3 = 16. Min = 0.
   if (total >= 12) return "quente";
   if (total >= 7) return "morno";
   return "frio";
 }
 
-export const RESULT_COPY = {
-  quente: {
-    eyebrow: "Lead prioritário",
-    title: "Boa notícia!",
-    description:
-      "Pelo seu perfil, você pode se encaixar nas condições do Alameda 500. Você tem prioridade no atendimento.",
-    cta: "Falar com especialista agora",
-    tone: "warm",
-  },
-  morno: {
-    eyebrow: "Perfil próximo do ideal",
-    title: "Você está muito perto.",
-    description:
-      "Podemos simular as melhores condições para que o Alameda 500 caiba no seu planejamento.",
-    cta: "Simular minhas condições",
-    tone: "neutral",
-  },
-  frio: {
-    eyebrow: "Vamos te preparar",
-    title: "Talvez ainda não seja o momento ideal…",
-    description:
-      "Mas podemos te ajudar a se organizar para quando o momento certo chegar. Vem entender as possibilidades.",
-    cta: "Quero entender melhor",
-    tone: "cool",
-  },
-};
-
 export const WHATSAPP_PHONE = "5527996610579";
 
-export function buildWhatsappUrl({ name, classification }) {
-  const nameStr = name ? ` Meu nome é ${name}.` : "";
-  const msg = `Olá! Acabei de fazer o teste do Alameda 500 e quero falar com um especialista.${nameStr} Meu perfil: ${classification.toUpperCase()}.`;
+export function buildWhatsappUrl({ name, temperatura, score, casa, agendamento, modulos }) {
+  const lines = [
+    `Olá! Acabei de concluir a jornada interativa do Alameda 500.`,
+    name ? `Meu nome é ${name}.` : "",
+    temperatura ? `Temperatura do meu perfil: ${temperatura.toUpperCase()}${score ? ` (score ${score}/150)` : ""}.` : "",
+    casa ? `Casa de interesse: ${casa}.` : "",
+    agendamento
+      ? `Agendei atendimento: ${agendamento.data} às ${agendamento.horario} (${agendamento.formato}).`
+      : "",
+    modulos && modulos.length ? `Módulos que explorei: ${modulos.join(", ")}.` : "",
+    `Gostaria de dar o próximo passo.`,
+  ].filter(Boolean);
+  const msg = lines.join("\n");
   return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
 }
+
+// Regras MCMV — placeholders para Fase 2
+export const LEAD_SCORE = {
+  QUENTE: 90,
+  MORNO: 45,
+};

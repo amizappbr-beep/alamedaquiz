@@ -1,0 +1,46 @@
+{
+  "summary": "Full e2e testing of Alameda 500 v2 (HUB de Exploração) — backend + frontend. Backend: 12/12 pytest tests passed (health v2.0, lead drafts, validation guards for finalizing, score scenarios, list filters, summary). Frontend: hub with 6 modules, header score/modulos persisted, corretor gated by >=2 mods, all 6 module screens (empreendimento+lightbox, casas, perfil 6Q, simulador 'em breve', diferenciais 10 cards, corretor) plus agendamento (decorado/data/horario/nome/whatsapp BR mask) and imediato flow that opens wa.me/5527996610579 and routes to obrigado. Restart clears localStorage and resets hub. All POST /api/leads payloads observed and correct. App is shippable for this phase.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/leads", "issue": "Returns 200 instead of 201 Created (REST minor)."},
+      {"endpoint": "POST /api/leads", "issue": "Score for 'tempo' bonus is capped at 20 (5pt/30s, max 20). Spec example said 180s = 30pts → expected score 125/135. Actual is 120/130. Implementation matches code comment but DIFFERS from problem-statement math. Either fix the doc or raise the cap to 30 if intended."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Imediato → WhatsApp message", "issue": "WhatsApp text uses CLIENT-SIDE score (e.g. 'score 15/150 FRIO') which lags behind/differs from the score the backend recomputes after the +50 imediato bonus. Consider using the lead_score returned by POST /api/leads when building the wa.me URL.", "affected_selectors": ["imediato-submit-btn"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_alameda_api.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Decide: align backend tempo-bonus cap (20) with the problem-statement math (30) OR update the spec/doc — currently the score formula caps tempo at 20pt.",
+    "Use lead_score returned by POST /api/leads when composing the WhatsApp message in modulo-imediato so it matches server truth.",
+    "Optional: return 201 Created from POST /api/leads."
+  ],
+  "critical_code_review_comments": [
+    "server.py: deprecated @app.on_event('shutdown') — migrate to FastAPI lifespan handler.",
+    "server.py: POST /api/leads trusts client-supplied 'classification' for scoring — could be tampered. Consider recomputing classification server-side from quiz_answers (currently any client can send classification='quente' to inflate score).",
+    "server.py: 'lead_score' & 'temperatura' are recomputed server-side, but score is also computed client-side in JourneyContext. Two sources of truth — risk of UI/UX divergence (already observed in WhatsApp message).",
+    "server.py: phone is stored exactly as user-typed with mask. Normalise to digits-only / E.164 to enable dedupe/analytics.",
+    "server.py: no rate limiting / captcha on public POST /api/leads — easy to spam.",
+    "server.py: GET /api/leads returns ALL leads (limited to 200) without pagination cursor — fine for MVP but plan ahead.",
+    "Frontend: 'interacoes' contains duplicates (e.g. modulo_visitado for the same module appears twice in observed payload). De-dupe before send or on insert.",
+    "JourneyContext: scoring logic duplicated between client and backend (compute_lead_score). Extract a single shared rule set to avoid drift."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_alameda_api.py"
+  ],
+  "success_rate": {"backend": "100% (12/12)", "frontend": "100% (all critical flows)"},
+  "test_credentials": "N/A — no auth in this app.",
+  "seed_data_creation": "Multiple TEST_-prefixed leads created via API + UI flows: TEST_Agendamento, TEST_Imediato, TEST_Persist, TEST_Q, TEST_Cap, etc. Use temperatura/min_score query params to filter.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend tests at /app/backend/tests/test_alameda_api.py (pytest). Run with: REACT_APP_BACKEND_URL=$(grep REACT_APP_BACKEND_URL /app/frontend/.env|cut -d= -f2) pytest /app/backend/tests/ -v. Frontend stages routed by stage in JourneyContext: hub|empreendimento|casas|perfil|simulador|diferenciais|corretor|agendamento|imediato|obrigado. Key data-testids: hub-screen, hub-module-{empreendimento|casas|perfil|simulador|diferenciais|corretor}, journey-header, header-score, header-modulos, header-back-hub, modulo-{empreendimento|casas|perfil|simulador|diferenciais|corretor|agendamento|imediato|obrigado}, galeria-item-0..5, lightbox, lightbox-close, casa-card-{1_12|6_7|2_a_11}, perfil-option-*, perfil-next-btn, simulador-em-breve, diferencial-{quintal|sem_condominio|...}, corretor-{imediato|agendar}-btn, formato-{decorado|imovel|videochamada}, data-*, horario-HH:mm, agendamento-{nome|whatsapp|submit-btn}, imediato-{nome|whatsapp|submit-btn}, obrigado-resumo, obrigado-restart-btn. WhatsApp number: 5527996610579. localStorage key: alameda500_journey_v1. Score scoring formula in server.py compute_lead_score (mods+casa_preferida+quiz+simulacao+intencao+tempo cap 20).",
+  "rca of the issue": "No blocking bug. Two minor inconsistencies: (1) tempo cap=20 vs spec '30 for 180s' — code is internally consistent but problem-statement math is off. (2) WhatsApp message uses client-side score that is computed before the +50 imediato bonus is applied to journey state, producing a misleading 'score 15/150 FRIO' even though the backend persists ~65 score. Use lead_score from POST response when composing WhatsApp text."
+}
