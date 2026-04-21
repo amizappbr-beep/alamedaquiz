@@ -59,8 +59,10 @@ export default function ModuloImediato() {
       answer: a?.label || "",
     }));
 
+    let serverScore = leadScore;
+    let serverTemp = temperatura;
     try {
-      await axios.post(`${API}/leads`, {
+      const resp = await axios.post(`${API}/leads`, {
         name: name.trim(),
         phone: phone.trim(),
         modulos_visitados,
@@ -73,12 +75,14 @@ export default function ModuloImediato() {
         interacoes,
         tempo_total_segundos: tempoTotalSegundos,
       });
+      serverScore = resp.data?.lead_score ?? leadScore;
+      serverTemp = resp.data?.temperatura ?? temperatura;
 
-      // Redireciona ao WhatsApp
+      // Redireciona ao WhatsApp com score oficial do servidor
       const wa = buildWhatsappUrl({
         name: name.trim(),
-        temperatura,
-        score: leadScore,
+        temperatura: serverTemp,
+        score: serverScore,
         casa: casa_preferida,
         modulos: modulos_visitados,
       });
