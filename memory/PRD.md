@@ -5,8 +5,9 @@ MVP interativo para o Residencial Alameda 500 (Torres Engenharia, Alterosas/Serr
 
 ## Visão em 3 fases
 - **Fase 1 — Hub de Exploração** (✅ CONCLUÍDA 2026-04-21)
-- **Fase 2 — Simulador CAIXA/MCMV**
-- **Fase 3 — CRM embutido** (admin para a incorporadora, 1 corretor único)
+- **Fase 1.1 — Melhorias UX** (✅ CONCLUÍDA 2026-04-22: verde concluído, 2 blocos de quiz com insights, setas no lightbox, insights no hub)
+- **Fase 2 — Simulador CAIXA/MCMV + Proposta completa** (✅ CONCLUÍDA 2026-04-22)
+- **Fase 3 — CRM embutido** (aguardando)
 
 ## Personas
 - **Explorador curioso**: quer entender sem compromisso. Navega módulos livremente.

@@ -50,10 +50,8 @@ export function simularProposta({
   const complementoAteChaves = ateChavesTotal - sinalTotal; // ~7%
   const mesesComplemento = Math.max(1, CONDICOES.mesesObraEntrega - parcelasSinal);
 
-  // Residual pós-chaves opcional
-  const residual = usarResidualPosChaves
-    ? Math.min(CONDICOES.residualMaximo, valorImovel * 0.05)
-    : 0;
+  // Residual pós-chaves opcional: valor fixo R$ 20k em 20 meses (regra Torres)
+  const residual = usarResidualPosChaves ? CONDICOES.residualMaximo : 0;
 
   // Valor financiado bancário (80% - residual se usar)
   const valorFinanciado = valorImovel * CONDICOES.percentualFinanciado - residual;

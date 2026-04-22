@@ -248,7 +248,7 @@ async def simular(payload: SimulacaoInput):
     complemento = ate_chaves_total - sinal_total
     meses_comp = max(1, CONDICOES["meses_obra"] - payload.parcelas_sinal)
 
-    residual = min(CONDICOES["residual_max"], valor_imovel * 0.05) if payload.usar_residual_pos_chaves else 0
+    residual = CONDICOES["residual_max"] if payload.usar_residual_pos_chaves else 0
     financiado_bruto = valor_imovel * CONDICOES["pct_financiado"] - residual
 
     recursos_proprios = max(0, (payload.entrada or 0) + (payload.fgts or 0) - ate_chaves_total)
