@@ -14,26 +14,21 @@ export default function ModuloEmpreendimento() {
 
   const openImage = (item, idx) => {
     addInteracao("imagem_aberta", { titulo: item.title, index: idx });
-    markImagemVista(idx);
     setLightboxIdx(idx);
   };
 
   const prev = useCallback(() => {
-    setLightboxIdx((i) => {
-      if (i === null) return null;
-      const next = (i - 1 + GALLERY_ITEMS.length) % GALLERY_ITEMS.length;
-      markImagemVista(next);
-      return next;
-    });
-  }, [markImagemVista]);
+    setLightboxIdx((i) => (i === null ? null : (i - 1 + GALLERY_ITEMS.length) % GALLERY_ITEMS.length));
+  }, []);
   const next = useCallback(() => {
-    setLightboxIdx((i) => {
-      if (i === null) return null;
-      const nxt = (i + 1) % GALLERY_ITEMS.length;
-      markImagemVista(nxt);
-      return nxt;
-    });
-  }, [markImagemVista]);
+    setLightboxIdx((i) => (i === null ? null : (i + 1) % GALLERY_ITEMS.length));
+  }, []);
+
+  // Mark viewed image as side-effect to avoid setState during render
+  useEffect(() => {
+    if (lightboxIdx !== null) markImagemVista(lightboxIdx);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lightboxIdx]);
 
   useEffect(() => {
     if (lightboxIdx === null) return;

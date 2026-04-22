@@ -86,7 +86,7 @@ export default function Header() {
             }}
           >
             <TempIcon className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Score</span>
+            <span className="hidden sm:inline">Engajamento</span>
             <span className="tabular-nums">{leadScore}</span>
           </div>
         </div>
