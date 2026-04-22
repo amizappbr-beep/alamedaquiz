@@ -248,22 +248,172 @@ export function gerarInsights(answers) {
 
 export const WHATSAPP_PHONE = "5527996610579";
 
-export function buildWhatsappUrl({ name, temperatura, score, casa, agendamento, modulos, simulacao }) {
-  const lines = [
-    `Olá! Acabei de concluir a jornada interativa do Alameda 500.`,
-    name ? `Meu nome é ${name}.` : "",
-    temperatura ? `Temperatura do meu perfil: ${temperatura.toUpperCase()}${score ? ` (score ${score}/150)` : ""}.` : "",
-    casa ? `Casa de interesse: ${casa}.` : "",
-    simulacao?.parcelaBancaria
-      ? `Fiz simulação — parcela estimada: R$ ${Math.round(simulacao.parcelaBancaria)} (faixa ${simulacao.faixa?.nome}).`
-      : "",
-    agendamento
-      ? `Agendei atendimento: ${agendamento.data} às ${agendamento.horario} (${agendamento.formato}).`
-      : "",
-    modulos && modulos.length ? `Módulos explorados: ${modulos.join(", ")}.` : "",
-    `Gostaria de dar o próximo passo.`,
-  ].filter(Boolean);
-  const msg = lines.join("\n");
+// Formata BRL para mensagens (sem dependência externa, aceita number ou null)
+function brl(v) {
+  if (v == null || isNaN(v)) return null;
+  try {
+    return `R$ ${Number(v).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
+  } catch (_) {
+    return `R$ ${Math.round(v)}`;
+  }
+}
+
+// Nomes amigáveis de casa por id
+const CASA_NOMES = {
+  "1_12": "Casas 1 e 12 (Premium)",
+  "6_7": "Casas 6 e 7 (Família)",
+  "2_a_11": "Casas 2–11 (Essencial)",
+};
+
+const MODULO_NOMES = {
+  empreendimento: "Conhecer o empreendimento",
+  casas: "Escolher casa ideal",
+  perfil: "Perfil de compra",
+  simulador: "Simulador financeiro",
+  diferenciais: "Diferenciais",
+  localizacao: "Localização",
+  corretor: "Corretor",
+};
+
+// Monta a mensagem rica do WhatsApp com TODA a jornada.
+// Aceita um objeto amplo com o estado da JourneyContext + dados do servidor.
+export function buildWhatsappUrl({
+  name,
+  phone,
+  temperatura,
+  score,
+  casa,
+  classification,
+  agendamento,
+  modulos,
+  simulacao,
+  quiz_answers,
+  solicita_atendimento_imediato,
+}) {
+  const perfilLabel =
+    classification === "quente"
+      ? "Perfil compatível com o produto"
+      : classification === "morno"
+      ? "Perfil em análise"
+      : classification
+      ? "Explorando opções"
+      : null;
+
+  const sec = []; // seções concatenadas
+  sec.push(
+    name
+      ? `Olá! Aqui é ${name} — acabei de explorar a experiência digital do Alameda 500 e gostaria de dar o próximo passo.`
+      : `Olá! Acabei de explorar a experiência digital do Alameda 500 e gostaria de dar o próximo passo.`
+  );
+
+  // Perfil resumo
+  const perfil = [];
+  if (perfilLabel)
+    perfil.push(`• Classificação: ${perfilLabel}${score ? ` (score ${score}/150)` : ""}`);
+  if (temperatura && !perfilLabel)
+    perfil.push(`• Temperatura: ${temperatura.toUpperCase()}`);
+  if (casa) perfil.push(`• Casa de interesse: ${CASA_NOMES[casa] || casa}`);
+  if (modulos && modulos.length)
+    perfil.push(
+      `• Módulos explorados (${modulos.length}/6): ${modulos
+        .map((m) => MODULO_NOMES[m] || m)
+        .join(", ")}`
+    );
+  if (perfil.length) sec.push(`👤 MEU PERFIL\n${perfil.join("\n")}`);
+
+  // Momento + Financeiro (vindo do quiz)
+  const q = quiz_answers || {};
+  const get = (id) => q[id]?.label;
+  const momento = [];
+  if (get("situacao")) momento.push(`• Motivação: ${get("situacao")}`);
+  if (get("desejo")) momento.push(`• O que não pode faltar: ${get("desejo")}`);
+  if (get("tempo")) momento.push(`• Tempo pra mudar: ${get("tempo")}`);
+  if (get("decisao")) momento.push(`• Decisão ainda este mês: ${get("decisao")}`);
+  if (momento.length) sec.push(`💬 MOMENTO\n${momento.join("\n")}`);
+
+  const financeiro = [];
+  if (get("renda_familiar"))
+    financeiro.push(`• Renda familiar: ${get("renda_familiar")}`);
+  if (get("trabalho")) financeiro.push(`• Regime de trabalho: ${get("trabalho")}`);
+  if (get("fgts")) financeiro.push(`• FGTS: ${get("fgts")}`);
+  if (get("parcela")) financeiro.push(`• Parcela desejada: ${get("parcela")}`);
+  if (get("entrada")) financeiro.push(`• Entrada (sinal): ${get("entrada")}`);
+  if (get("imovel_atual")) financeiro.push(`• Imóvel hoje: ${get("imovel_atual")}`);
+  if (get("estado_civil"))
+    financeiro.push(`• Situação familiar: ${get("estado_civil")}`);
+  if (financeiro.length) sec.push(`💰 PERFIL FINANCEIRO\n${financeiro.join("\n")}`);
+
+  // Simulação (se houver)
+  const raw = simulacao?._raw;
+  if (raw) {
+    const sim = [];
+    sim.push(`• Status: ${raw.aprovado ? "Pré-qualificado ✅" : "Precisa ajuste"}`);
+    if (raw.unidade?.numero)
+      sim.push(
+        `• Unidade simulada: Casa ${raw.unidade.numero}${
+          raw.unidade.nome ? ` (${raw.unidade.nome})` : ""
+        }`
+      );
+    if (raw.valor_imovel) sim.push(`• Valor do imóvel: ${brl(raw.valor_imovel)}`);
+    if (raw.parcelas_sinal && raw.parcela_sinal)
+      sim.push(
+        `• Sinal: ${raw.parcelas_sinal}x de ${brl(raw.parcela_sinal)} (total ${brl(
+          raw.sinal_total
+        )})`
+      );
+    if (raw.meses_complemento && raw.parcela_complemento)
+      sim.push(
+        `• Complemento até chaves: ${raw.meses_complemento}x de ${brl(
+          raw.parcela_complemento
+        )}`
+      );
+    if (raw.prazo_meses && raw.parcela_bancaria)
+      sim.push(
+        `• Financiamento bancário: ${raw.prazo_meses}x de ${brl(
+          raw.parcela_bancaria
+        )} (${brl(raw.valor_financiado)} financiados)`
+      );
+    if (raw.residual > 0 && raw.parcela_residual)
+      sim.push(`• Residual pós-chaves: 20x de ${brl(raw.parcela_residual)}`);
+    if (raw.faixa?.nome)
+      sim.push(`• Faixa MCMV: ${raw.faixa.nome} (taxa ${(raw.taxa_aa * 100).toFixed(2)}% a.a.)`);
+    if (sim.length) sec.push(`🏦 SIMULAÇÃO\n${sim.join("\n")}`);
+  } else if (simulacao?.parcela_estimada || simulacao?.parcelaBancaria) {
+    const p = simulacao.parcela_estimada || simulacao.parcelaBancaria;
+    sec.push(
+      `🏦 SIMULAÇÃO\n• Parcela estimada: ${brl(p)}${
+        simulacao.faixa_mcmv ? ` (faixa ${simulacao.faixa_mcmv})` : ""
+      }`
+    );
+  }
+
+  // Agendamento (se houver)
+  if (agendamento?.data) {
+    const formatoTxt =
+      agendamento.formato === "imovel"
+        ? "Visita ao imóvel"
+        : agendamento.formato === "videochamada"
+        ? "Videochamada"
+        : agendamento.formato;
+    const ag = [
+      `• Dia: ${agendamento.data}${agendamento.horario ? ` às ${agendamento.horario}` : ""}`,
+      formatoTxt ? `• Formato: ${formatoTxt}` : null,
+      agendamento.observacao ? `• Observação: ${agendamento.observacao}` : null,
+    ].filter(Boolean);
+    sec.push(`📅 AGENDAMENTO\n${ag.join("\n")}`);
+  }
+
+  // Contato
+  if (phone) sec.push(`📱 Meu WhatsApp: ${phone}`);
+
+  // Encerramento
+  sec.push(
+    solicita_atendimento_imediato
+      ? "Quero atendimento agora, se possível. Obrigado!"
+      : "Fico no aguardo do retorno. Obrigado!"
+  );
+
+  const msg = sec.join("\n\n");
   return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
 }
 

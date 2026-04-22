@@ -1,14 +1,13 @@
 import React, { useMemo, useState } from "react";
 import axios from "axios";
 import { useJourney } from "../../context/JourneyContext";
-import { ArrowLeft, ArrowRight, Loader2, Calendar, MapPin, Video, Home as HomeIcon } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Calendar, MapPin, Video } from "lucide-react";
 import { toast } from "sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const FORMATOS = [
-  { id: "decorado", label: "No apto decorado", icon: HomeIcon, descricao: "Stand de vendas" },
   { id: "imovel", label: "Visita ao imóvel", icon: MapPin, descricao: "No Alameda 500" },
   { id: "videochamada", label: "Videochamada", icon: Video, descricao: "De onde você estiver" },
 ];
@@ -55,7 +54,7 @@ export default function ModuloAgendamento() {
 
   const [name, setName] = useState(ctxName || "");
   const [phone, setPhone] = useState(ctxPhone || "");
-  const [formato, setFormato] = useState("decorado");
+  const [formato, setFormato] = useState("imovel");
   const [selectedDate, setSelectedDate] = useState(null); // Date
   const [selectedHour, setSelectedHour] = useState(null);
   const [observacao, setObservacao] = useState("");
@@ -156,7 +155,7 @@ export default function ModuloAgendamento() {
             <legend className="mb-3 text-[11px] uppercase tracking-[0.22em]" style={{ color: "var(--torres-muted)" }}>
               1. Formato
             </legend>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {FORMATOS.map((f) => {
                 const Icon = f.icon;
                 const isSel = formato === f.id;

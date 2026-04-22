@@ -167,19 +167,6 @@ export default function ModuloResultadoSimulacao() {
                   {formatBRL(raw.parcela_bancaria)}/mês
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs uppercase tracking-wider" style={{ color: "var(--torres-muted)" }}>
-                  Valor final da compra <span className="normal-case opacity-70">(juros + principal)</span>
-                </span>
-                <span className="serif text-lg font-semibold" style={{ color: "var(--torres-ink)" }}>
-                  {formatBRL(
-                    raw.sinal_total +
-                      raw.complemento_ate_chaves +
-                      raw.parcela_bancaria * raw.prazo_meses +
-                      (raw.residual || 0)
-                  )}
-                </span>
-              </div>
             </div>
           </div>
 

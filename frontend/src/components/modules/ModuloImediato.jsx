@@ -79,12 +79,18 @@ export default function ModuloImediato() {
       serverTemp = resp.data?.temperatura ?? temperatura;
 
       // Redireciona ao WhatsApp com score oficial do servidor
+      // e com todo o contexto da jornada para facilitar o atendimento.
       const wa = buildWhatsappUrl({
         name: name.trim(),
+        phone: phone.trim(),
         temperatura: serverTemp,
         score: serverScore,
         casa: casa_preferida,
+        classification,
         modulos: modulos_visitados,
+        quiz_answers,
+        simulacao,
+        solicita_atendimento_imediato: true,
       });
       window.open(wa, "_blank", "noopener");
       goTo("obrigado");

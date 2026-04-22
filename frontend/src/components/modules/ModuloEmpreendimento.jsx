@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useJourney } from "../../context/JourneyContext";
 import { GALLERY_ITEMS, ALAMEDA_IMAGES } from "../../lib/assets";
 import { X, ArrowRight, ChevronLeft, ChevronRight, Check as CheckIcon } from "lucide-react";
+import ModuleFooterCTA from "../ModuleFooterCTA";
 
 export default function ModuloEmpreendimento() {
   const { markModuloVisitado, goTo, addInteracao, imagens_vistas, markImagemVista } = useJourney();
@@ -168,24 +169,16 @@ export default function ModuloEmpreendimento() {
         </div>
 
         {/* CTA próximo passo */}
-        <div className="mt-12 flex flex-col items-start gap-4 rounded-3xl border border-[color:var(--torres-line)] bg-white p-8 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="serif text-xl font-semibold" style={{ color: "var(--torres-ink)" }}>
-              Que tal descobrir qual das 3 plantas combina com você?
-            </div>
-            <div className="mt-1 text-sm" style={{ color: "var(--torres-muted)" }}>
-              Te mostramos o modelo ideal em 30 segundos.
-            </div>
-          </div>
-          <button
-            onClick={() => goTo("casas")}
-            data-testid="empreendimento-next-btn"
-            className="btn-primary-torres group inline-flex items-center gap-2"
-          >
-            Escolher minha casa
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </button>
-        </div>
+        <ModuleFooterCTA
+          testId="empreendimento-footer-cta"
+          titulo="Que tal descobrir qual das 3 plantas combina com você?"
+          descricao="Te mostramos o modelo ideal em 30 segundos."
+          primary={{
+            label: "Escolher minha casa",
+            onClick: () => goTo("casas"),
+            testId: "empreendimento-next-btn",
+          }}
+        />
       </div>
 
       {/* Lightbox with navigation */}

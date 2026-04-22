@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
 import { useJourney } from "../../context/JourneyContext";
 import { ENDERECO } from "../../lib/assets";
-import { MapPin, Navigation, ArrowRight, ExternalLink, Map as MapIcon } from "lucide-react";
+import { MapPin, Navigation, ExternalLink, Map as MapIcon } from "lucide-react";
+import ModuleFooterCTA from "../ModuleFooterCTA";
 
 export default function ModuloLocalizacao() {
   const { markModuloVisitado, goTo } = useJourney();
@@ -92,24 +93,16 @@ export default function ModuloLocalizacao() {
         </div>
 
         {/* Next */}
-        <div className="mt-10 flex flex-col items-start gap-4 rounded-3xl border border-[color:var(--torres-line)] bg-white p-8 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="serif text-xl font-semibold" style={{ color: "var(--torres-ink)" }}>
-              Vamos conversar sobre sua proposta?
-            </div>
-            <div className="mt-1 text-sm" style={{ color: "var(--torres-muted)" }}>
-              Atendimento imediato pelo WhatsApp ou visita agendada no seu horário.
-            </div>
-          </div>
-          <button
-            onClick={() => goTo("corretor")}
-            data-testid="localizacao-next-btn"
-            className="btn-primary-torres group inline-flex items-center gap-2"
-          >
-            Falar com corretor
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </button>
-        </div>
+        <ModuleFooterCTA
+          testId="localizacao-footer-cta"
+          titulo="Vamos conversar sobre sua proposta?"
+          descricao="Atendimento imediato pelo WhatsApp ou visita agendada no seu horário."
+          primary={{
+            label: "Falar com corretor",
+            onClick: () => goTo("corretor"),
+            testId: "localizacao-next-btn",
+          }}
+        />
       </div>
     </section>
   );

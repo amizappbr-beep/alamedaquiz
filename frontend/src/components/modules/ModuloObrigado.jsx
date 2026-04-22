@@ -7,12 +7,16 @@ import { buildWhatsappUrl } from "../../lib/quizData";
 export default function ModuloObrigado() {
   const {
     name,
+    phone,
     agendamento,
     solicita_atendimento_imediato,
     leadScore,
     temperatura,
+    classification,
     casa_preferida,
     modulos_visitados,
+    quiz_answers,
+    simulacao,
     reset,
   } = useJourney();
 
@@ -21,11 +25,16 @@ export default function ModuloObrigado() {
 
   const wa = buildWhatsappUrl({
     name,
+    phone,
     temperatura,
     score: leadScore,
-    casa: casa?.numeros,
+    classification,
+    casa: casa_preferida,
     agendamento,
     modulos: modulos_visitados,
+    quiz_answers,
+    simulacao,
+    solicita_atendimento_imediato: isImediato,
   });
 
   const restart = () => {
