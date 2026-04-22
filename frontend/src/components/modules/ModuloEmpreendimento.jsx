@@ -163,6 +163,20 @@ export default function ModuloEmpreendimento() {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 fade-up"
           onClick={() => setLightboxIdx(null)}
+          onTouchStart={(e) => {
+            window.__touchStartX = e.touches[0].clientX;
+          }}
+          onTouchEnd={(e) => {
+            const startX = window.__touchStartX;
+            if (startX == null) return;
+            const endX = e.changedTouches[0].clientX;
+            const dx = endX - startX;
+            if (Math.abs(dx) > 50) {
+              if (dx < 0) next();
+              else prev();
+            }
+            window.__touchStartX = null;
+          }}
           data-testid="lightbox"
         >
           <button

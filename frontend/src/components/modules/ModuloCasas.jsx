@@ -1,13 +1,14 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useJourney } from "../../context/JourneyContext";
 import { CASA_MODELOS, sugerirCasa } from "../../lib/conteudo";
 import { PRECO_MODELO, UNIDADES, formatBRL } from "../../lib/tabelaVendas";
-import { Check, ArrowRight, Sparkles, Ruler, Square, Bed } from "lucide-react";
+import { Check, ArrowRight, Sparkles, Ruler, Square, Bed, X } from "lucide-react";
 
 export default function ModuloCasas() {
   const { markModuloVisitado, goTo, setCasaPreferida, casa_preferida, quiz_answers } =
     useJourney();
   const sugestao = sugerirCasa(quiz_answers);
+  const [plantaOpen, setPlantaOpen] = useState(null);
 
   useEffect(() => {
     markModuloVisitado("casas");
@@ -152,6 +153,43 @@ export default function ModuloCasas() {
                     ))}
                   </ul>
 
+                  {/* Plantas humanizadas */}
+                  {m.plantas && m.plantas.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-[color:var(--torres-line)]">
+                      <div className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: "var(--torres-muted)" }}>
+                        Planta humanizada
+                      </div>
+                      <div className="flex gap-2">
+                        {m.plantas.map((p, pIdx) => (
+                          <div
+                            key={pIdx}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPlantaOpen({ casa: m.nome, ...p });
+                            }}
+                            data-testid={`casa-planta-${m.id}-${pIdx}`}
+                            className="flex-1 cursor-pointer overflow-hidden rounded-lg border border-[color:var(--torres-line)] bg-white transition-all hover:border-[color:var(--torres-indigo)] hover:shadow-md"
+                          >
+                            <div className="relative aspect-[4/3] overflow-hidden bg-[color:var(--torres-cream)]">
+                              <img
+                                src={p.src}
+                                alt={`Planta ${m.nome} ${p.label}`}
+                                loading="lazy"
+                                className="h-full w-full object-contain transition-transform duration-500 hover:scale-105"
+                              />
+                            </div>
+                            <div className="px-2 py-1.5 text-center text-[10px] font-semibold" style={{ color: "var(--torres-ink)" }}>
+                              {p.label}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-1.5 text-center text-[10px]" style={{ color: "var(--torres-muted)" }}>
+                        Toque para ampliar
+                      </div>
+                    </div>
+                  )}
+
                   <div
                     className={`mt-5 inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold transition-all ${
                       selected
@@ -196,6 +234,39 @@ export default function ModuloCasas() {
           </button>
         </div>
       </div>
+
+      {/* Planta lightbox */}
+      {plantaOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setPlantaOpen(null)}
+          data-testid="planta-lightbox"
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setPlantaOpen(null);
+            }}
+            data-testid="planta-lightbox-close"
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur hover:bg-white/20"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <div className="max-h-[90vh] max-w-6xl" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={plantaOpen.src}
+              alt={`Planta ${plantaOpen.casa} ${plantaOpen.label}`}
+              className="max-h-[85vh] w-full rounded-xl bg-white object-contain p-2"
+            />
+            <div className="mt-3 text-center text-white">
+              <div className="serif text-lg font-semibold">
+                Casa {plantaOpen.casa} — {plantaOpen.label}
+              </div>
+              <div className="text-sm opacity-70">Planta humanizada</div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

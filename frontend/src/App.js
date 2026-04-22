@@ -14,6 +14,7 @@ import ModuloCorretor from "./components/modules/ModuloCorretor";
 import ModuloAgendamento from "./components/modules/ModuloAgendamento";
 import ModuloImediato from "./components/modules/ModuloImediato";
 import ModuloObrigado from "./components/modules/ModuloObrigado";
+import ModuloLocalizacao from "./components/modules/ModuloLocalizacao";
 import Gate from "./components/Gate";
 
 function Router() {
@@ -32,6 +33,8 @@ function Router() {
       return <ModuloResultadoSimulacao />;
     case "diferenciais":
       return <ModuloDiferenciais />;
+    case "localizacao":
+      return <ModuloLocalizacao />;
     case "corretor":
       return <ModuloCorretor />;
     case "agendamento":

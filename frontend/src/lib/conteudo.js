@@ -16,7 +16,10 @@ export const CASA_MODELOS = [
     lavabo: true,
     destaques: ["Quintal lateral", "Lavabo", "Frente pra rua", "Maior área privativa"],
     idealPara: ["privacidade", "algo_proprio", "mais_espaco"],
-    imagem: ALAMEDA_IMAGES.fachadaDia,
+    imagem: ALAMEDA_IMAGES.fachadaEntradaPrincipal,
+    plantas: [
+      { label: "Térreo", src: ALAMEDA_IMAGES.plantaPremiumTerreo },
+    ],
     unidades: 2,
   },
   {
@@ -34,6 +37,10 @@ export const CASA_MODELOS = [
     destaques: ["2 quintais privativos", "Lavabo", "Espaço pra família", "Área gourmet"],
     idealPara: ["familia", "quintal"],
     imagem: ALAMEDA_IMAGES.quintal,
+    plantas: [
+      { label: "Térreo", src: ALAMEDA_IMAGES.plantaFamiliaTerreo },
+      { label: "2º Piso", src: ALAMEDA_IMAGES.plantaFamiliaPiso2 },
+    ],
     unidades: 2,
   },
   {
@@ -51,6 +58,10 @@ export const CASA_MODELOS = [
     destaques: ["Quintal nos fundos", "Melhor custo", "Área central", "8 unidades"],
     idealPara: ["baixo_custo", "sair_aluguel"],
     imagem: ALAMEDA_IMAGES.sala,
+    plantas: [
+      { label: "Térreo", src: ALAMEDA_IMAGES.plantaEssencialTerreo },
+      { label: "2º Piso", src: ALAMEDA_IMAGES.plantaEssencialPiso2 },
+    ],
     unidades: 8,
   },
 ];
@@ -142,6 +153,7 @@ export const DIFERENCIAIS = [
 export const MODULOS = [
   {
     id: "empreendimento",
+    ordem: 1,
     titulo: "Conhecer o empreendimento",
     descricao: "Galeria imersiva: fachada, interiores, áreas comuns.",
     icon: "Building2",
@@ -149,20 +161,23 @@ export const MODULOS = [
   },
   {
     id: "casas",
+    ordem: 2,
     titulo: "Escolher minha casa ideal",
-    descricao: "3 modelos de planta — com sugestão personalizada.",
+    descricao: "3 modelos de planta com sugestão personalizada.",
     icon: "Home",
     cor: "#6471A2",
   },
   {
     id: "perfil",
+    ordem: 3,
     titulo: "Descobrir meu perfil de compra",
-    descricao: "6 perguntas rápidas revelam seu perfil.",
+    descricao: "12 perguntas em 2 blocos revelam seu perfil.",
     icon: "UserRound",
     cor: "#6471A2",
   },
   {
     id: "simulador",
+    ordem: 4,
     titulo: "Simular meu financiamento",
     descricao: "Calcule parcela e proposta com regras MCMV / Caixa.",
     icon: "Calculator",
@@ -170,13 +185,23 @@ export const MODULOS = [
   },
   {
     id: "diferenciais",
+    ordem: 5,
     titulo: "Meus diferenciais",
     descricao: "10 motivos que fazem a diferença no dia a dia.",
     icon: "Sparkles",
     cor: "#6471A2",
   },
   {
+    id: "localizacao",
+    ordem: 6,
+    titulo: "Ver localização e rota",
+    descricao: "Master plan + Google Maps com rota a partir de onde você está.",
+    icon: "MapPin",
+    cor: "#6471A2",
+  },
+  {
     id: "corretor",
+    ordem: 7,
     titulo: "Falar com corretor",
     descricao: "Agende ou receba atendimento imediato.",
     icon: "MessageCircle",

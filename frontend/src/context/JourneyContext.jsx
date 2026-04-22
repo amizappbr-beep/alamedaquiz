@@ -147,7 +147,12 @@ export function JourneyProvider({ children }) {
   const setContato = ({ name, phone }) =>
     setState((s) => ({ ...s, name, phone }));
 
-  const setRegistered = (val) => setState((s) => ({ ...s, registered: val }));
+  const setRegistered = (val) => {
+    setState((s) => ({ ...s, registered: val }));
+    if (val && typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
   const setOpportunityOptIn = (val) => setState((s) => ({ ...s, opportunityOptIn: val }));
 
   const markImagemVista = (idx) =>

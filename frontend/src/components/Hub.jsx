@@ -14,10 +14,11 @@ import {
   Lock,
   Check,
   TrendingUp,
+  Zap,
 } from "lucide-react";
 import { ALAMEDA_IMAGES } from "../lib/assets";
 
-const ICON_MAP = { Building2, Home, UserRound, Calculator, Sparkles, MessageCircle };
+const ICON_MAP = { Building2, Home, UserRound, Calculator, Sparkles, MessageCircle, MapPin };
 
 export default function Hub() {
   const {
@@ -97,20 +98,30 @@ export default function Hub() {
 
       {/* Módulos */}
       <div className="mx-auto max-w-[1320px] px-6 py-12 sm:px-10 lg:px-16 lg:py-16">
-        <div className="mb-8 flex items-end justify-between">
+        <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
           <div>
             <div className="text-[11px] uppercase tracking-[0.22em]" style={{ color: "var(--torres-muted)" }}>
               Sua jornada
             </div>
             <h2 className="serif mt-2 text-2xl font-semibold sm:text-3xl" style={{ color: "var(--torres-ink)" }}>
-              Por onde quer começar?
+              Sugerimos seguir nesta ordem:
             </h2>
+            <p className="mt-1 text-sm" style={{ color: "var(--torres-muted)" }}>
+              Cada etapa prepara você melhor para a próxima — mas você escolhe por onde começar.
+            </p>
           </div>
-          {!corretorHabilitado && (
-            <div className="hidden rounded-full border border-[color:var(--torres-line)] bg-white px-3 py-1.5 text-[11px] sm:block" style={{ color: "var(--torres-muted)" }}>
-              Explore 2 módulos pra liberar "Falar com corretor"
-            </div>
-          )}
+          <button
+            onClick={() => {
+              if (corretorHabilitado) goTo("corretor");
+              else goTo("empreendimento");
+            }}
+            data-testid="hub-shortcut-corretor"
+            className="inline-flex items-center gap-2 rounded-full border border-[color:var(--torres-indigo)] bg-white px-4 py-2.5 text-xs font-semibold transition-all hover:bg-[color:var(--torres-indigo)] hover:text-white"
+            style={{ color: "var(--torres-indigo)" }}
+          >
+            <Zap className="h-3.5 w-3.5" />
+            Prefiro falar com o corretor agora
+          </button>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="hub-grid">
@@ -139,14 +150,27 @@ export default function Hub() {
                 style={{ animationDelay: `${idx * 70}ms` }}
               >
                 <div className="flex w-full items-start justify-between">
-                  <div
-                    className="flex h-11 w-11 items-center justify-center rounded-xl transition-transform group-hover:scale-110"
-                    style={{
-                      backgroundColor: visitado ? "#d1fae5" : "rgba(100,113,162,0.08)",
-                      color: visitado ? "#047857" : "var(--torres-indigo)",
-                    }}
-                  >
-                    <Icon className="h-5 w-5" />
+                  <div className="flex items-center gap-3">
+                    {m.ordem && !m.isFinal && (
+                      <div
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold"
+                        style={{
+                          backgroundColor: visitado ? "#059669" : "var(--torres-indigo)",
+                          color: "#fff",
+                        }}
+                      >
+                        {m.ordem}
+                      </div>
+                    )}
+                    <div
+                      className="flex h-11 w-11 items-center justify-center rounded-xl transition-transform group-hover:scale-110"
+                      style={{
+                        backgroundColor: visitado ? "#d1fae5" : "rgba(100,113,162,0.08)",
+                        color: visitado ? "#047857" : "var(--torres-indigo)",
+                      }}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
                   </div>
                   {visitado && (
                     <span
