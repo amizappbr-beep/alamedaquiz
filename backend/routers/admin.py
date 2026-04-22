@@ -84,8 +84,10 @@ def get_db(request: Request):
 async def admin_login(payload: LoginPayload, request: Request):
     db = get_db(request)
     email = payload.email.strip().lower()
-    client_ip = request.client.host if request.client else "unknown"
-    identifier = f"{client_ip}:{email}"
+    # Brute-force identifier scoped to the email (single-admin panel). Using
+    # email-only avoids proxy/ingress IP rotation (X-Forwarded-For chains)
+    # evading the rate-limit by cycling source addresses.
+    identifier = email
 
     if await is_locked_out(db, identifier):
         raise HTTPException(

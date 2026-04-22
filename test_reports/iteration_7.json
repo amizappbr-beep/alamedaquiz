@@ -1,0 +1,35 @@
+{
+  "summary": "RETEST da Fase 3 (CRM + Certificado) após os 2 fixes HIGH e 1 MED reportados em iteration_6. Tudo PASSA agora: backend 26/26 pytest (incluindo brute-force lockout), brute-force validado também via curl manual (5×401 + 6ª correta=429), certificado baixa um PNG real de 1.07 MB com background same-origin, loading state 'Gerando imagem…' visível, sem SecurityError, sem NaN no card. Admin regressão OK (login + kanban + drawer + 6 colunas).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PATCH /api/admin/leads/{id}/status", "issue": "status_history.from ainda é None (não lê valor anterior). Funcional mas perde transição — low priority, carregado de iteration_6."},
+      {"endpoint": "POST /api/admin/login", "issue": "CORS ainda tem allow_origins=['*'] com allow_credentials=True. OK enquanto só usarmos Bearer; trocar para origins explícitas caso migre para cookies."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_admin_fase3.py",
+    "/app/test_reports/pytest/admin_fase3.xml",
+    "/app/test_reports/certificado_retest.png"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "admin.py (linha 87-90): identifier=email é a solução certa para este caso (admin-panel single-user); se o painel virar multi-usuário, considerar combinar com X-Forwarded-For para evitar DoS entre contas.",
+    "CertificadoExploracao.jsx: excelente — useCORS:true ficou redundante depois que o asset virou same-origin, mas não prejudica. allowTaint:false + same-origin é a combinação mais robusta. O requestAnimationFrame antes do html2canvas garante a pintura do loading state.",
+    "CertificadoExploracao.jsx: safeScore/safeModulos com Number.isFinite é a proteção correta — leadScore continua sendo computado pelo JourneyContext, então na prática sempre chega como número; o guard cobre edge cases de seed corrompido ou props direto."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (26/26 pytest)", "frontend": "100% (certificado + admin regressão)"},
+  "test_credentials": "Admin: admin@alameda500.com / vILabMQvT59VB-8NW7IclIu4 — OK (validado após limpeza de login_attempts).",
+  "seed_data_creation": "Reutilizados leads TEST_* criados em iterations anteriores + novos leads de seed_lead do pytest. Para testar /obrigado no frontend, seeded localStorage 'alameda500_journey_v1' com stage='obrigado' + registered=true.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Fase 3 está estável. Arquivo pytest reutilizável em /app/backend/tests/test_admin_fase3.py (26 casos, todos verdes em 2.66s). Para retestar o certificado via Playwright: seed journey em localStorage com stage='obrigado', então use page.expect_download() — PNG esperado > 1 MB. Nota de ambiente: chromium headless não tem navigator.canShare, então o fluxo cai direto no <a download> (mobile Safari/Chrome usa Web Share API, precisa de teste manual real ou device emulation completa).",
+  "rca of the issue": "Resolvido — sem RCA novo nesta iteração. Fixes anteriores (iteration_6): (1) identifier=email elimina a rotação de IP do ingress do K8s; (2) mover fachada_noturna.png para /public/assets evita canvas tainted (same-origin) e o Number.isFinite guard protege de seeds sem leadScore."
+}

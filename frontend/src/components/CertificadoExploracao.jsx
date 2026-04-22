@@ -1,7 +1,10 @@
 import React, { useRef, useState } from "react";
 import html2canvas from "html2canvas";
+import { toast } from "sonner";
 import { Download, Share2, Loader2, MapPin, CheckCircle2 } from "lucide-react";
-import { ALAMEDA_IMAGES } from "../lib/assets";
+
+// Same-origin asset — avoids html2canvas tainting the canvas via CORS.
+const BG_IMG = "/assets/fachada_noturna.png";
 
 const CASA_NOMES = {
   "1_12": "Premium · Casa 1 ou 12",
@@ -37,16 +40,22 @@ export default function CertificadoExploracao({
   const firstName = (name || "Explorador").split(" ")[0];
   const temperaturaText = tempToText(temperatura);
   const casaNome = casaId ? CASA_NOMES[casaId] : null;
+  const safeScore = Number.isFinite(leadScore) ? leadScore : 0;
+  const safeModulos = Number.isFinite(modulosCount) ? modulosCount : 0;
 
   const download = async () => {
     if (!cardRef.current) return;
     setGenerating(true);
     try {
+      // Give the browser one paint to show the loading state before
+      // html2canvas kicks off its heavy synchronous work.
+      await new Promise((r) => requestAnimationFrame(r));
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: null,
         scale: 2, // retina-quality
         useCORS: true,
         logging: false,
+        allowTaint: false,
       });
       const dataUrl = canvas.toDataURL("image/png");
 
@@ -59,7 +68,7 @@ export default function CertificadoExploracao({
             await navigator.share({
               files: [file],
               title: "Meu certificado — Alameda 500",
-              text: `Explorei ${modulosCount}/6 módulos do Residencial Alameda 500.`,
+              text: `Explorei ${safeModulos}/6 módulos do Residencial Alameda 500.`,
             });
             return;
           }
@@ -72,6 +81,10 @@ export default function CertificadoExploracao({
       link.href = dataUrl;
       link.download = `alameda-500-certificado-${firstName.toLowerCase()}.png`;
       link.click();
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("Certificado:", err);
+      toast.error("Não conseguimos gerar o certificado. Tente novamente.");
     } finally {
       setGenerating(false);
     }
@@ -108,7 +121,7 @@ export default function CertificadoExploracao({
           <div
             className="absolute inset-x-0 top-0 h-[55%] opacity-50"
             style={{
-              backgroundImage: `url(${ALAMEDA_IMAGES.fachadaPrincipalNoturna})`,
+              backgroundImage: `url(${BG_IMG})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
@@ -163,7 +176,7 @@ export default function CertificadoExploracao({
               >
                 explorou{" "}
                 <span className="serif font-semibold" style={{ color: "#c7cfe8" }}>
-                  {modulosCount} {modulosCount === 1 ? "módulo" : "módulos"}
+                  {safeModulos} {safeModulos === 1 ? "módulo" : "módulos"}
                 </span>{" "}
                 da experiência digital do Residencial Alameda 500 e está{" "}
                 <span className="font-semibold text-emerald-300">pronto(a) para o próximo passo</span>.
@@ -171,8 +184,8 @@ export default function CertificadoExploracao({
 
               {/* Stats row */}
               <div className="mt-5 grid grid-cols-2 gap-2">
-                <Stat label="Engajamento" value={`${leadScore}/150`} sub={temperaturaText} />
-                <Stat label="Módulos" value={`${modulosCount}/6`} sub="explorados" />
+                <Stat label="Engajamento" value={`${safeScore}/150`} sub={temperaturaText} />
+                <Stat label="Módulos" value={`${safeModulos}/6`} sub="explorados" />
               </div>
 
               {casaNome && (
