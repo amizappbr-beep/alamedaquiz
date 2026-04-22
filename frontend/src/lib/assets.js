@@ -11,6 +11,8 @@ export const ALAMEDA_IMAGES = {
   fachadaNoiteDetalhes:
     "https://customer-assets.emergentagent.com/job_alameda-quiz/artifacts/al7t82c1_FACHADA%20INTERNA%20DETALHES%20A%20NOITE.jpeg",
   fachadaEntradaPrincipal: "/assets/fachada_entrada.jpg",
+  fachadaPrincipalNoturna:
+    "https://customer-assets.emergentagent.com/job_alameda-quiz/artifacts/6heyc9dn_FACHADA%20PRINCIPAL%20NOTURNA.png",
   estacionamentoTarde:
     "https://customer-assets.emergentagent.com/job_alameda-quiz/artifacts/1gdpajy3_ESTACIONAMENTO%20FINAL%20DE%20TARDE.jpeg",
   // Interiores

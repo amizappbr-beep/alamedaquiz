@@ -41,24 +41,38 @@ export default function Hub() {
       className="relative min-h-[calc(100vh-60px)] w-full bg-[color:var(--torres-cream)]"
     >
       {/* Hero */}
-      <div className="relative overflow-hidden border-b border-[color:var(--torres-line)]">
-        <div className="absolute inset-0 -z-10">
-          <img src={ALAMEDA_IMAGES.fachadaDia} alt="" className="h-full w-full object-cover opacity-[0.18]" />
-          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(251,250,252,0.4) 0%, var(--torres-cream) 100%)" }} />
+      <div className="relative isolate overflow-hidden border-b border-[color:var(--torres-line)]">
+        <div className="absolute inset-0 z-0">
+          <img src={ALAMEDA_IMAGES.fachadaPrincipalNoturna} alt="" className="h-full w-full object-cover" />
+          {/* Dark overlay for readability + soft gradient into cream at the bottom */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(90deg, rgba(20,22,34,0.72) 0%, rgba(20,22,34,0.55) 45%, rgba(20,22,34,0.25) 100%)",
+            }}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 h-24"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(251,250,252,0) 0%, var(--torres-cream) 100%)",
+            }}
+          />
         </div>
-        <div className="mx-auto max-w-[1320px] px-6 py-12 sm:px-10 sm:py-16 lg:px-16 lg:py-20">
-          <div className="fade-up flex items-center gap-2 text-[11px] uppercase tracking-[0.22em]" style={{ color: "var(--torres-indigo)" }}>
+        <div className="relative z-10 mx-auto max-w-[1320px] px-6 py-14 sm:px-10 sm:py-20 lg:px-16 lg:py-24">
+          <div className="fade-up flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-white/90">
             <MapPin className="h-3 w-3" />
             Alterosas, Serra — ES
           </div>
-          <h1 className="fade-up fade-up-delay-1 serif mt-3 max-w-3xl text-4xl font-semibold leading-[1.04] sm:text-5xl lg:text-[60px]" style={{ color: "var(--torres-ink)" }}>
+          <h1 className="fade-up fade-up-delay-1 serif mt-3 max-w-3xl text-4xl font-semibold leading-[1.04] text-white drop-shadow-[0_2px_16px_rgba(0,0,0,0.45)] sm:text-5xl lg:text-[60px]">
             Bem-vindo ao{" "}
-            <span style={{ color: "var(--torres-indigo)" }} className="italic">
+            <span className="italic" style={{ color: "#c7cfe8" }}>
               Alameda 500
             </span>
             . Explore do seu jeito.
           </h1>
-          <p className="fade-up fade-up-delay-2 mt-5 max-w-2xl text-base sm:text-lg" style={{ color: "var(--torres-muted)" }}>
+          <p className="fade-up fade-up-delay-2 mt-5 max-w-2xl text-base text-white/90 drop-shadow-[0_1px_8px_rgba(0,0,0,0.35)] sm:text-lg">
             Uma jornada interativa pra você conhecer cada detalhe, descobrir
             qual casa combina com você e só falar com um corretor quando
             estiver pronto. Sem pressão, no seu ritmo.
@@ -81,7 +95,7 @@ export default function Hub() {
               </span>
             )}
             {classification && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold capitalize" style={{ borderColor: "rgba(100,113,162,0.35)", backgroundColor: "rgba(100,113,162,0.08)", color: "var(--torres-indigo-deep)" }}>
+              <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold capitalize" style={{ borderColor: "rgba(255,255,255,0.35)", backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", backdropFilter: "blur(8px)" }}>
                 <UserRound className="h-3 w-3" />
                 Perfil {classification}
               </span>
