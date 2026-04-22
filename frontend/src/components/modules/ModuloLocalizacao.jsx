@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useJourney } from "../../context/JourneyContext";
-import { ENDERECO, ALAMEDA_IMAGES } from "../../lib/assets";
+import { ENDERECO } from "../../lib/assets";
 import { MapPin, Navigation, ArrowRight, ExternalLink, Map as MapIcon } from "lucide-react";
 
 export default function ModuloLocalizacao() {
   const { markModuloVisitado, goTo } = useJourney();
-  const [masterOpen, setMasterOpen] = useState(false);
 
   useEffect(() => {
     markModuloVisitado("localizacao");
@@ -84,43 +83,12 @@ export default function ModuloLocalizacao() {
             title="Mapa Alameda 500"
             src={ENDERECO.mapsEmbed}
             width="100%"
-            height="420"
+            height="480"
             style={{ border: 0 }}
             loading="lazy"
             allowFullScreen
             referrerPolicy="no-referrer-when-downgrade"
           />
-        </div>
-
-        {/* Master plan */}
-        <div className="mt-8 fade-up">
-          <div className="flex items-end justify-between">
-            <div>
-              <div className="text-[11px] uppercase tracking-[0.22em]" style={{ color: "var(--torres-indigo)" }}>
-                Implantação do empreendimento
-              </div>
-              <h2 className="serif mt-2 text-2xl font-semibold sm:text-3xl" style={{ color: "var(--torres-ink)" }}>
-                Master plan
-              </h2>
-              <p className="mt-1 text-sm" style={{ color: "var(--torres-muted)" }}>
-                As 12 casas e a distribuição no terreno. Toque para ampliar.
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setMasterOpen(true)}
-            data-testid="localizacao-masterplan-btn"
-            className="group mt-5 block w-full overflow-hidden rounded-3xl border border-[color:var(--torres-line)] bg-white"
-          >
-            <div className="relative aspect-[16/10] overflow-hidden">
-              <img
-                src={ALAMEDA_IMAGES.implantacao}
-                alt="Master plan — implantação"
-                className="h-full w-full object-contain transition-transform duration-700 group-hover:scale-[1.02]"
-              />
-            </div>
-          </button>
         </div>
 
         {/* Next */}
@@ -143,30 +111,6 @@ export default function ModuloLocalizacao() {
           </button>
         </div>
       </div>
-
-      {masterOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-          onClick={() => setMasterOpen(false)}
-          data-testid="masterplan-lightbox"
-        >
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setMasterOpen(false);
-            }}
-            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur hover:bg-white/20"
-            data-testid="masterplan-close"
-          >
-            ✕
-          </button>
-          <img
-            src={ALAMEDA_IMAGES.implantacao}
-            alt="Master plan"
-            className="max-h-[90vh] max-w-[95vw] rounded-xl object-contain"
-          />
-        </div>
-      )}
     </section>
   );
 }

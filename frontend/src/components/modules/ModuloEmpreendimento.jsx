@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useJourney } from "../../context/JourneyContext";
-import { GALLERY_ITEMS } from "../../lib/assets";
+import { GALLERY_ITEMS, ALAMEDA_IMAGES } from "../../lib/assets";
 import { X, ArrowRight, ChevronLeft, ChevronRight, Check as CheckIcon } from "lucide-react";
 
 export default function ModuloEmpreendimento() {
   const { markModuloVisitado, goTo, addInteracao, imagens_vistas, markImagemVista } = useJourney();
   const [lightboxIdx, setLightboxIdx] = useState(null);
+  const [masterOpen, setMasterOpen] = useState(false);
 
   useEffect(() => {
     markModuloVisitado("empreendimento");
@@ -137,6 +138,35 @@ export default function ModuloEmpreendimento() {
           </span>
         </div>
 
+        {/* Master plan — implantação do empreendimento */}
+        <div className="mt-14 fade-up" data-testid="empreendimento-masterplan">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.22em]" style={{ color: "var(--torres-indigo)" }}>
+              Implantação do empreendimento
+            </div>
+            <h2 className="serif mt-2 text-2xl font-semibold sm:text-3xl" style={{ color: "var(--torres-ink)" }}>
+              Master plan
+            </h2>
+            <p className="mt-1 text-sm" style={{ color: "var(--torres-muted)" }}>
+              As 12 casas e a distribuição no terreno. Toque para ampliar.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setMasterOpen(true)}
+            data-testid="empreendimento-masterplan-btn"
+            className="group mt-5 block w-full overflow-hidden rounded-3xl border border-[color:var(--torres-line)] bg-white"
+          >
+            <div className="relative aspect-[16/10] overflow-hidden">
+              <img
+                src={ALAMEDA_IMAGES.implantacao}
+                alt="Master plan — implantação Alameda 500"
+                className="h-full w-full object-contain transition-transform duration-700 group-hover:scale-[1.02]"
+              />
+            </div>
+          </button>
+        </div>
+
         {/* CTA próximo passo */}
         <div className="mt-12 flex flex-col items-start gap-4 rounded-3xl border border-[color:var(--torres-line)] bg-white p-8 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -228,6 +258,31 @@ export default function ModuloEmpreendimento() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Master plan lightbox */}
+      {masterOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setMasterOpen(false)}
+          data-testid="masterplan-lightbox"
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setMasterOpen(false);
+            }}
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur hover:bg-white/20"
+            data-testid="masterplan-close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={ALAMEDA_IMAGES.implantacao}
+            alt="Master plan"
+            className="max-h-[90vh] max-w-[95vw] rounded-xl object-contain"
+          />
         </div>
       )}
     </section>
