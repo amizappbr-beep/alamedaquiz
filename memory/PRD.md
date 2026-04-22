@@ -40,7 +40,7 @@ Criar uma landing page interativa / concierge digital para o empreendimento "Res
 - Espelho dinâmico da proposta em tempo real
 - Validação servidor + frontend
 
-### 🔴 Fase 3 — CRM Embutido (PENDENTE — P0)
+### 🔴 Fase 3 — CRM Embutido ✅ (CONCLUÍDO — 2026-02)
 - `/admin` com login (JWT custom, email+senha)
 - Kanban: Novo → Contatado → Agendado → Em Negociação → Ganho/Perdido
 - Detalhe do lead: perfil, quiz, simulação, módulos, timeline
@@ -74,18 +74,19 @@ Criar uma landing page interativa / concierge digital para o empreendimento "Res
 
 ## Backlog / Prioridades
 
-### P0 (próxima entrega)
-- **Fase 3 — CRM embutido** (backend + frontend + auth + refactor)
+### P0 (todos concluídos na sessão atual)
 
 ### P1
-- **Toast global "Posso te ajudar agora?"** após 90s de inatividade em qualquer módulo (mesmo princípio dos cards do simulador, aplicado globalmente)
+- **Toast global "Posso te ajudar agora?"** após 90s de inatividade em qualquer módulo
 - **Confirmação pós-agendamento pelo WhatsApp do próprio usuário** (fecha ciclo de confiança)
-- **PUT /api/leads/{id}/journey** — implementar endpoint ou remover da spec (hoje frontend consolida tudo num POST final, funciona bem)
+- **Multi-admin**: evoluir seed → registration de corretores; adicionar X-Forwarded-For no identifier do rate-limit
+- **status_history.from**: hoje não persiste o valor anterior no PATCH status
 
 ### P2
 - Copy mais contextual nos CTAs "Próximo passo" por módulo
-- Analytics básico no admin (leads/dia, split por temperatura, conversão por etapa)
+- Analytics mais ricos (timeline de leads/dia, split por etapa, funnel)
 - Lazy load de imagens pesadas do lightbox
+- CORS explícito (origins por env) caso migre para cookies httpOnly
 
 ---
 
