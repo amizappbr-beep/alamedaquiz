@@ -30,68 +30,70 @@ export function parcelaPrice(valorFinanciado, taxaAA, meses) {
  * @param {object} input
  * @param {number} input.valorImovel
  * @param {number} input.rendaBrutaFamiliar
- * @param {number} input.entradaPropria - poupança/recursos próprios
- * @param {number} input.fgts - saldo FGTS disponível
- * @param {number} input.prazoFinanciamentoMeses - 240/300/360
+ * @param {number} input.entradaPropria - dinheiro disponível HOJE para o sinal
+ * @param {number} input.fgts - saldo FGTS (reduz financiamento)
+ * @param {number} input.capacidadeMensal - capacidade de pagamento mensal durante a obra
+ * @param {number} input.prazoFinanciamentoMeses - 240/300/360/420
  * @param {number} input.parcelasSinal - 1, 2 ou 3
- * @param {boolean} input.usarResidualPosChaves - se quer parcelar até 20k pós-entrega
+ * @param {boolean} input.usarResidualPosChaves
  */
 export function simularProposta({
   valorImovel,
   rendaBrutaFamiliar,
   entradaPropria = 0,
   fgts = 0,
+  capacidadeMensal = null,
   prazoFinanciamentoMeses = 360,
   parcelasSinal = 3,
   usarResidualPosChaves = false,
 }) {
-  const sinalTotal = valorImovel * CONDICOES.percentualSinal; // 13%
-  const ateChavesTotal = valorImovel * CONDICOES.percentualAteChaves; // 20% total
-  const complementoAteChaves = ateChavesTotal - sinalTotal; // ~7%
+  const sinalTotal = valorImovel * CONDICOES.percentualSinal;
+  const ateChavesTotal = valorImovel * CONDICOES.percentualAteChaves;
+  const complementoAteChaves = ateChavesTotal - sinalTotal;
   const mesesComplemento = Math.max(1, CONDICOES.mesesObraEntrega - parcelasSinal);
 
-  // Residual pós-chaves opcional: valor fixo R$ 20k em 20 meses (regra Torres)
+  // Residual fixo R$ 20k em 20 meses (regra Torres)
   const residual = usarResidualPosChaves ? CONDICOES.residualMaximo : 0;
 
-  // Valor financiado bancário (80% - residual se usar)
+  // FGTS reduz diretamente o financiamento bancário (aplicado na liberação)
   const valorFinanciado = valorImovel * CONDICOES.percentualFinanciado - residual;
-
-  // Entrada + FGTS pode reduzir o financiamento (se a pessoa quiser antecipar)
-  const recursosProprios = Math.max(0, (entradaPropria || 0) + (fgts || 0) - ateChavesTotal);
-  const financiadoLiquido = Math.max(0, valorFinanciado - recursosProprios);
+  const financiadoLiquido = Math.max(0, valorFinanciado - (fgts || 0));
 
   // Faixa e parcela bancária
   const faixa = identificarFaixa(rendaBrutaFamiliar);
   const parcelaBancaria = parcelaPrice(financiadoLiquido, faixa.taxaAA, prazoFinanciamentoMeses);
 
-  // Parcela do sinal
   const parcelaSinal = sinalTotal / parcelasSinal;
-
-  // Parcela complemento até chaves (simples, sem juros — correção CUB ignorada na simulação)
   const parcelaComplemento = complementoAteChaves / mesesComplemento;
-
-  // Parcela residual pós-chaves
   const parcelaResidual = residual > 0 ? residual / CONDICOES.residualMesesMax : 0;
 
-  // Regra prudencial: parcela bancária não deve exceder 30% da renda
+  // Check 1: parcela bancária cabe em 30% da renda
   const limiteComprometimento = rendaBrutaFamiliar * 0.3;
   const aprovadoCapacidade = parcelaBancaria <= limiteComprometimento;
+  // Check 2: dinheiro hoje cobre a 1ª parcela do sinal
+  const sinalOk = (entradaPropria || 0) >= parcelaSinal * 0.95;
+  // Check 3: capacidade mensal cobre o complemento (se informada)
+  const complementoOk =
+    capacidadeMensal === null ||
+    capacidadeMensal === undefined ||
+    capacidadeMensal >= parcelaComplemento * 0.95;
 
-  // Recurso próprio cobre os 20% até chaves?
-  const cobreAteChaves = (entradaPropria || 0) + (fgts || 0) >= ateChavesTotal * 0.95;
+  const aprovadoGeral = aprovadoCapacidade && sinalOk && complementoOk && financiadoLiquido > 0;
 
-  const aprovadoGeral = aprovadoCapacidade && cobreAteChaves && financiadoLiquido > 0;
-
-  // Monta razões
   const razoes = [];
   if (!aprovadoCapacidade) {
     razoes.push(
-      `Parcela estimada de ${parcelaBancaria.toFixed(0)} compromete mais de 30% da renda.`
+      `Parcela bancária de R$ ${parcelaBancaria.toFixed(0)} supera 30% da renda.`
     );
   }
-  if (!cobreAteChaves) {
+  if (!sinalOk) {
     razoes.push(
-      `Recursos próprios (entrada + FGTS) precisam cobrir ~${(ateChavesTotal).toFixed(0)} pagos até as chaves.`
+      `Para o sinal em ${parcelasSinal}x, é preciso ao menos R$ ${parcelaSinal.toFixed(0)} hoje.`
+    );
+  }
+  if (!complementoOk) {
+    razoes.push(
+      `Capacidade mensal não cobre R$ ${parcelaComplemento.toFixed(0)}/mês durante a obra.`
     );
   }
 
@@ -114,7 +116,8 @@ export function simularProposta({
     usarResidualPosChaves,
     limiteComprometimento,
     aprovadoCapacidade,
-    cobreAteChaves,
+    sinalOk,
+    complementoOk,
     aprovadoGeral,
     razoes,
   };

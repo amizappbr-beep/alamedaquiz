@@ -211,8 +211,9 @@ class SimulacaoInput(BaseModel):
     unidade_numero: Optional[int] = None
     modelo_id: Optional[str] = None
     renda_bruta: float
-    entrada: float = 0
-    fgts: float = 0
+    entrada: float = 0  # valor disponível HOJE para o sinal
+    fgts: float = 0  # saldo FGTS — usado no financiamento bancário
+    capacidade_mensal: Optional[float] = None  # capacidade mensal durante a obra
     prazo_meses: int = 360
     parcelas_sinal: int = 3
     usar_residual_pos_chaves: bool = False
@@ -249,10 +250,9 @@ async def simular(payload: SimulacaoInput):
     meses_comp = max(1, CONDICOES["meses_obra"] - payload.parcelas_sinal)
 
     residual = CONDICOES["residual_max"] if payload.usar_residual_pos_chaves else 0
+    # FGTS reduz diretamente o financiamento bancário (aplicado na liberação do banco)
     financiado_bruto = valor_imovel * CONDICOES["pct_financiado"] - residual
-
-    recursos_proprios = max(0, (payload.entrada or 0) + (payload.fgts or 0) - ate_chaves_total)
-    financiado_liquido = max(0, financiado_bruto - recursos_proprios)
+    financiado_liquido = max(0, financiado_bruto - (payload.fgts or 0))
 
     parcela_bancaria = _parcela_price(financiado_liquido, faixa["taxa_aa"], payload.prazo_meses)
     parcela_sinal = sinal_total / payload.parcelas_sinal
@@ -261,17 +261,27 @@ async def simular(payload: SimulacaoInput):
 
     limite = renda * 0.30
     aprovado_capacidade = parcela_bancaria <= limite
-    cobre_ate_chaves = (payload.entrada or 0) + (payload.fgts or 0) >= ate_chaves_total * 0.95
-    aprovado = aprovado_capacidade and cobre_ate_chaves and financiado_liquido > 0
+    # Check 1: consegue pagar a 1ª parcela do sinal hoje?
+    sinal_ok = (payload.entrada or 0) >= parcela_sinal * 0.95
+    # Check 2: capacidade mensal cobre o complemento (se informada)
+    complemento_ok = (
+        payload.capacidade_mensal is None
+        or payload.capacidade_mensal >= parcela_complemento * 0.95
+    )
+    aprovado = aprovado_capacidade and sinal_ok and complemento_ok and financiado_liquido > 0
 
     razoes = []
     if not aprovado_capacidade:
         razoes.append(
-            f"Parcela estimada de R$ {parcela_bancaria:.0f} supera 30% da renda (limite R$ {limite:.0f})."
+            f"Parcela bancária de R$ {parcela_bancaria:.0f} supera 30% da renda (limite R$ {limite:.0f})."
         )
-    if not cobre_ate_chaves:
+    if not sinal_ok:
         razoes.append(
-            f"Recursos próprios (entrada + FGTS) precisam cobrir ~R$ {ate_chaves_total:.0f} até as chaves."
+            f"Para o sinal em {payload.parcelas_sinal}x, é preciso ao menos R$ {parcela_sinal:.0f} hoje (você informou R$ {(payload.entrada or 0):.0f})."
+        )
+    if not complemento_ok:
+        razoes.append(
+            f"A capacidade mensal informada (R$ {(payload.capacidade_mensal or 0):.0f}) não cobre as parcelas de R$ {parcela_complemento:.0f} até as chaves."
         )
 
     return {
@@ -294,7 +304,8 @@ async def simular(payload: SimulacaoInput):
         "parcela_residual": round(parcela_residual, 2),
         "limite_comprometimento": round(limite, 2),
         "aprovado_capacidade": aprovado_capacidade,
-        "cobre_ate_chaves": cobre_ate_chaves,
+        "sinal_ok": sinal_ok,
+        "complemento_ok": complemento_ok,
         "aprovado": aprovado,
         "razoes": razoes,
     }

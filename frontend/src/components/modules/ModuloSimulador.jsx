@@ -40,6 +40,7 @@ export default function ModuloSimulador() {
   const [renda, setRenda] = useState("");
   const [entrada, setEntrada] = useState("");
   const [fgts, setFgts] = useState("");
+  const [capacidadeMensal, setCapacidadeMensal] = useState("");
   const [prazo, setPrazo] = useState(360);
   const [parcelasSinal, setParcelasSinal] = useState(3);
   const [residual, setResidual] = useState(false);
@@ -77,7 +78,7 @@ export default function ModuloSimulador() {
   const parseNum = (s) => parseInt((s || "").replace(/\D/g, ""), 10) || 0;
 
   const podeSimular =
-    unidadeNumero && parseNum(renda) > 0 && parseNum(entrada) + parseNum(fgts) > 0;
+    unidadeNumero && parseNum(renda) > 0 && parseNum(entrada) > 0;
 
   // Espelho dinâmico — recalcula conforme o usuário preenche
   const previa = useMemo(() => {
@@ -90,6 +91,7 @@ export default function ModuloSimulador() {
         rendaBrutaFamiliar: rendaN,
         entradaPropria: parseNum(entrada),
         fgts: parseNum(fgts),
+        capacidadeMensal: capacidadeMensal ? parseNum(capacidadeMensal) : null,
         prazoFinanciamentoMeses: prazo,
         parcelasSinal,
         usarResidualPosChaves: residual,
@@ -98,12 +100,12 @@ export default function ModuloSimulador() {
       return null;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unidadeSel?.preco, renda, entrada, fgts, prazo, parcelasSinal, residual]);
+  }, [unidadeSel?.preco, renda, entrada, fgts, capacidadeMensal, prazo, parcelasSinal, residual]);
 
   const submit = async (e) => {
     e.preventDefault();
     if (!podeSimular) {
-      setError("Preencha unidade, renda e pelo menos entrada ou FGTS.");
+      setError("Preencha unidade, renda e o valor disponível para o sinal.");
       return;
     }
     setError("");
@@ -114,6 +116,7 @@ export default function ModuloSimulador() {
         renda_bruta: parseNum(renda),
         entrada: parseNum(entrada),
         fgts: parseNum(fgts),
+        capacidade_mensal: capacidadeMensal ? parseNum(capacidadeMensal) : null,
         prazo_meses: prazo,
         parcelas_sinal: parcelasSinal,
         usar_residual_pos_chaves: residual,
@@ -224,20 +227,26 @@ export default function ModuloSimulador() {
               />
             </Field>
 
-            {/* Entrada + FGTS */}
+            {/* Entrada sinal + FGTS */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="3. Entrada disponível (R$)">
+              <Field
+                label="3. Disponível hoje para o sinal (R$)"
+                hint="Pode ser parcelado em até 3x. Não precisa dos 20% já!"
+              >
                 <input
                   type="text"
                   inputMode="numeric"
                   value={entrada}
                   onChange={(e) => setEntrada(formatBRLInput(e.target.value))}
-                  placeholder="Ex: 30.000"
+                  placeholder="Ex: 20.000"
                   data-testid="simulador-entrada"
                   className="w-full rounded-xl border border-[color:var(--torres-line)] bg-white px-4 py-3 text-base outline-none transition-all focus:border-[color:var(--torres-indigo)] focus:ring-2 focus:ring-[color:var(--torres-indigo)]/20"
                 />
               </Field>
-              <Field label="4. FGTS disponível (R$)">
+              <Field
+                label="4. Saldo FGTS (R$)"
+                hint="Reduz o financiamento bancário — não precisa estar disponível agora."
+              >
                 <input
                   type="text"
                   inputMode="numeric"
@@ -250,9 +259,25 @@ export default function ModuloSimulador() {
               </Field>
             </div>
 
+            {/* Capacidade mensal durante a obra */}
+            <Field
+              label="5. Capacidade mensal durante a obra (R$) — opcional"
+              hint="Durante ~15 meses, até as chaves. Se deixar em branco, mostramos a parcela esperada pra você validar."
+            >
+              <input
+                type="text"
+                inputMode="numeric"
+                value={capacidadeMensal}
+                onChange={(e) => setCapacidadeMensal(formatBRLInput(e.target.value))}
+                placeholder="Ex: 2.000"
+                data-testid="simulador-capacidade-mensal"
+                className="w-full rounded-xl border border-[color:var(--torres-line)] bg-white px-4 py-3 text-base outline-none transition-all focus:border-[color:var(--torres-indigo)] focus:ring-2 focus:ring-[color:var(--torres-indigo)]/20"
+              />
+            </Field>
+
             {/* Prazo + parcelas sinal */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="5. Prazo do financiamento">
+              <Field label="6. Prazo do financiamento">
                 <div className="flex gap-2 flex-wrap" data-testid="simulador-prazos">
                   {[240, 300, 360, 420].map((p) => (
                     <button
@@ -271,7 +296,7 @@ export default function ModuloSimulador() {
                   ))}
                 </div>
               </Field>
-              <Field label="6. Parcelas do sinal (13%)">
+              <Field label="7. Parcelas do sinal (13%)">
                 <div className="flex gap-2" data-testid="simulador-sinal-parcelas">
                   {[1, 2, 3].map((p) => (
                     <button
@@ -419,12 +444,17 @@ export default function ModuloSimulador() {
                       />
                       {!previa.aprovadoCapacidade && (
                         <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-800" data-testid="simulador-alerta-parcela">
-                          ⚠ Parcela {formatBRL(previa.parcelaBancaria)} passa do limite ({formatBRL(previa.limiteComprometimento)}). Tente prazo maior ou entrada maior.
+                          ⚠ Parcela {formatBRL(previa.parcelaBancaria)} passa do limite ({formatBRL(previa.limiteComprometimento)}). Tente prazo maior ou aumente o FGTS.
                         </div>
                       )}
-                      {!previa.cobreAteChaves && (
-                        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-800" data-testid="simulador-alerta-entrada">
-                          ⚠ Recursos próprios precisam cobrir ~{formatBRL(previa.ateChavesTotal)} até as chaves.
+                      {!previa.sinalOk && (
+                        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-800" data-testid="simulador-alerta-sinal">
+                          ⚠ Pro sinal em {previa.parcelasSinal}x, precisa de ~{formatBRL(previa.parcelaSinal)} hoje.
+                        </div>
+                      )}
+                      {!previa.complementoOk && (
+                        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-800" data-testid="simulador-alerta-complemento">
+                          ⚠ Durante a obra: {formatBRL(previa.parcelaComplemento)}/mês por {previa.mesesComplemento} meses. Sua capacidade mensal não cobre.
                         </div>
                       )}
                     </>
@@ -447,12 +477,17 @@ export default function ModuloSimulador() {
   );
 }
 
-function Field({ label, children }) {
+function Field({ label, hint, children }) {
   return (
     <div>
-      <label className="mb-2 block text-[11px] uppercase tracking-[0.22em]" style={{ color: "var(--torres-muted)" }}>
+      <label className="mb-1 block text-[11px] uppercase tracking-[0.22em]" style={{ color: "var(--torres-muted)" }}>
         {label}
       </label>
+      {hint && (
+        <div className="mb-2 text-[11px]" style={{ color: "var(--torres-muted)" }}>
+          💡 {hint}
+        </div>
+      )}
       {children}
     </div>
   );
