@@ -54,26 +54,27 @@ def test_get_unidades(client):
 
 # -------------------- Simulacao (v2.1) --------------------
 def test_simulacao_unidade7_low_renda_reprovado(client):
+    # Cenário genuinamente reprovado: renda baixa, entrada curta, prazo curto
     payload = {
         "unidade_numero": 7,
-        "renda_bruta": 6500,
-        "entrada": 50000,
-        "fgts": 40000,
-        "prazo_meses": 360,
+        "renda_bruta": 4000,
+        "entrada": 10000,
+        "fgts": 5000,
+        "prazo_meses": 240,
         "parcelas_sinal": 3,
     }
     r = client.post(f"{API}/simulacao", json=payload)
     assert r.status_code == 200, r.text
     data = r.json()
     assert data["aprovado"] is False
-    assert data["faixa"]["nome"] == "Faixa 3"
+    assert data["faixa"]["nome"] == "Faixa 2"
     # Casa Família 6/7 = 380.000 → sinal 13% = 49.400
     assert data["sinal_total"] == 49400.0
     assert "valor_financiado" in data
     assert "parcela_bancaria" in data
     assert isinstance(data["razoes"], list)
     assert len(data["razoes"]) >= 1
-    # parcela ~ 2025 > 1950 (30% of 6500) → razão deve mencionar 30%
+    # parcela > 30% da renda (limite comprometimento)
     assert data["parcela_bancaria"] > data["limite_comprometimento"]
     assert data["valor_imovel"] == 380000
 
@@ -94,7 +95,7 @@ def test_simulacao_unidade7_high_renda_aprovado(client):
     # SBPE faixa (renda > 8600)
     assert data["faixa"]["nome"] == "SBPE"
     assert data["aprovado_capacidade"] is True
-    assert data["cobre_ate_chaves"] is True
+    assert data["complemento_ok"] is True
     assert data["valor_financiado"] > 0
     assert data["razoes"] == []
 

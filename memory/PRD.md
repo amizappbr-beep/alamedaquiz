@@ -1,103 +1,107 @@
-# Alameda 500 — Concierge Digital (ex-Landing Interativa)
+# PRD — Residencial Alameda 500 (Torres Engenharia)
 
-## Problema original
-MVP interativo para o Residencial Alameda 500 (Torres Engenharia, Alterosas/Serra-ES). Evoluído de quiz linear para **HUB DE EXPLORAÇÃO não-linear** com lead scoring progressivo e handoff qualificado para corretor (agendamento ou atendimento imediato). Este app é a porta de entrada de um CRM imobiliário em construção.
+## Original Problem Statement
+Criar uma landing page interativa / concierge digital para o empreendimento "Residencial Alameda 500" (12 casas duplex, Alterosas, Serra/ES). Objetivo: filtrar e qualificar leads via jornada NÃO-linear onde o usuário explora o imóvel, vê opções de casas com plantas, responde quiz de perfil, simula financiamento (regras Caixa MCMV) e agenda visita ou fala com corretor.
 
-## Visão em 3 fases
-- **Fase 1 — Hub de Exploração** (✅ CONCLUÍDA 2026-04-21)
-- **Fase 1.1 — Melhorias UX** (✅ CONCLUÍDA 2026-04-22: verde concluído, 2 blocos de quiz com insights, setas no lightbox, insights no hub)
-- **Fase 2 — Simulador CAIXA/MCMV + Proposta completa** (✅ CONCLUÍDA 2026-04-22)
-- **Fase 3 — CRM embutido** (aguardando)
+**Idioma do produto:** PT-BR.
+**Cliente final do dashboard:** corretor + incorporadora.
+**Perfil do lead:** variado, porém com fração relevante de **baixa escolaridade** — UX deve ser intuitiva, linguagem natural, botões grandes, ajuda visível.
 
 ## Personas
-- **Explorador curioso**: quer entender sem compromisso. Navega módulos livremente.
-- **Comprador decidido**: quer fechar. Score >=90, escolhe atendimento imediato.
-- **Incorporadora Torres Engenharia (CRM)**: recebe leads já qualificados e enriquecidos.
-
-## Requisitos (estáticos)
-- Hub com 6 módulos clicáveis não-lineares
-- Lead scoring 0-150 recalculado em tempo real (client + server)
-- "Falar com corretor" só habilita após 2 módulos visitados
-- 2 opções de atendimento: imediato (WhatsApp) ou agendado (data + hora + formato)
-- 3 formatos de agendamento: apto decorado / visita ao imóvel / videochamada
-- Persistência em localStorage (jornada não perde ao recarregar)
-- Paleta Torres (índigo #6471A2 + off-white #F5F4F7), Playfair + Inter
+1. **Lead "Explorador"** — quer conhecer casa/condomínio antes de falar com alguém. Entra pelo Hub, percorre módulos, decide quando acionar corretor.
+2. **Lead "Decidido"** — vai direto "Falar com corretor" ou "Agendar visita".
+3. **Lead "Inseguro com finanças"** — precisa da ajuda visível no simulador e dos textos descontraídos (ex: "Pode ser parcelado em 3x. Não precisa dos 20% já!").
+4. **Corretor/Incorporadora** (Fase 3) — dashboard para ver leads, status, temperatura, jornada.
 
 ## Arquitetura
+- **Frontend:** React SPA (single-page). Stage routing via `JourneyContext`.
+- **Backend:** FastAPI + MongoDB (lead persistence, server-side scoring, simulation validation).
+- **Assets:** `customer-assets.emergentagent.com` + `/assets/` (PDFs convertidos em JPEG via poppler).
+- **Routing:** Todas as rotas prefixadas `/api`. Frontend usa `REACT_APP_BACKEND_URL`.
+- **Integrações externas:** Google Maps iframe, WhatsApp (wa.me).
 
-### Backend (FastAPI + MongoDB)
-- `GET /api/` — health v2.0
-- `POST /api/leads` — aceita jornada completa (`modulos_visitados`, `quiz_answers`, `classification`, `casa_preferida`, `simulacao`, `agendamento`, `solicita_atendimento_imediato`, `interacoes`, `tempo_total_segundos`). Valida nome+phone se finalizando (agendamento ou imediato). Recalcula `lead_score` e `temperatura` server-side.
-- `GET /api/leads` — lista com filtros `classification`, `temperatura`, `min_score`
-- `GET /api/leads/summary` — contagens + score médio/máx + totais de agendamentos e imediatos
+---
 
-### Frontend (React + Context)
-- `JourneyProvider` centraliza estado + persiste em localStorage
-- Stage machine: `hub | empreendimento | casas | perfil | simulador | diferenciais | corretor | agendamento | imediato | obrigado`
-- Header persistente com score/módulos
-- 9 componentes de módulo em `/components/modules/`
+## Fases do projeto
 
-### Lead Scoring (server e client)
-| Ação | Pontos |
-|------|--------|
-| Módulo empreendimento | +10 |
-| Módulo casas + escolha de preferida | +15 |
-| Módulo diferenciais | +5 |
-| Quiz quente/morno/frio | +30/+20/+10 |
-| Simulação com renda | +25 |
-| Agendamento | +40 |
-| Atendimento imediato | +50 |
-| Tempo na página | +5 por 30s (máx +20) |
+### ✅ Fase 1 — Hub Interativo (CONCLUÍDO)
+- Gate de captura (nome + WhatsApp + opt-in)
+- Hub com 6 módulos + indicador de ordem sugerida
+- Módulos: Empreendimento, Casas, Perfil (quiz 12 perguntas em 2 blocos), Simulador, Diferenciais, Localização
+- Módulo Corretor (gatekeeper) → Imediato ou Agendamento
+- Score + temperatura servidos pelo backend
 
-- Temperatura: ≥90 quente, ≥45 morno, <45 frio
+### ✅ Fase 2 — Simulador financeiro (CONCLUÍDO)
+- Regras MCMV (Faixas 1, 2, 3) + SBPE
+- Sinal 13% parcelado em até 3x (não exige 20% à vista)
+- Complemento 7% durante a obra (~15x)
+- Financiamento 80% Tabela Price
+- Residual opcional pós-chaves (20 meses)
+- Espelho dinâmico da proposta em tempo real
+- Validação servidor + frontend
 
-## Implementado (2026-04-21)
+### 🔴 Fase 3 — CRM Embutido (PENDENTE — P0)
+- `/admin` com login (JWT custom, email+senha)
+- Kanban: Novo → Contatado → Agendado → Em Negociação → Ganho/Perdido
+- Detalhe do lead: perfil, quiz, simulação, módulos, timeline
+- Filtros (temperatura, módulos completos, com simulação, agendou, etc.)
+- Notificação visual/sonora para leads quentes
+- Refatoração: separar rotas admin em router próprio
 
-### Fase 1
-- Backend v2.0 com modelos expandidos (QuizAnswer, Agendamento, Simulacao, Interacao) + compute_lead_score + compute_temperature (testado 12/12 pytest)
-- JourneyContext com persistência em localStorage
-- Header com score/módulos
-- Hub com 6 cards, gating do corretor por 2+ módulos
-- ModuloEmpreendimento com galeria lightbox (6 itens)
-- ModuloCasas com 3 plantas + sugestão pelo perfil
-- ModuloPerfil reusa quiz de 6 perguntas
-- ModuloSimulador com placeholder "Em breve"
-- ModuloDiferenciais com 10 cards
-- ModuloCorretor com escolha imediato/agendar
-- ModuloAgendamento com data (14 dias), formato, horário, nome+whatsapp
-- ModuloImediato com form rápido + abertura do WhatsApp com score oficial do servidor
-- ModuloObrigado com resumo da jornada + reset
-- Testing agent: 100% backend (12/12), 100% frontend (todos os fluxos críticos)
+---
 
-## Backlog
+## Changelog (o que foi implementado, com datas)
 
-### Fase 2 — Simulador CAIXA/MCMV (próxima)
-- Regras MCMV offline (faixas, subsídio, taxa, prazo)
-- Input: renda, entrada, FGTS, prazo → parcela estimada + faixa
-- Link secundário para simulador oficial da Caixa
-- Integra ao lead score (+25)
+### 2026-02 Fork (sessão atual)
+- **Hero do Hub** ganhou imagem "FACHADA PRINCIPAL NOTURNA" com gradiente dark para legibilidade
+- **Scroll-to-top** centralizado em `App.js` via `useLayoutEffect + requestAnimationFrame` duplo; funciona em iOS Safari e Android Chrome
+- **`ModuleFooterCTA`** — componente compartilhado usado nos módulos Empreendimento, Casas, Diferenciais e Localização: CTA primário + "Ou fale direto com um corretor" (WhatsApp imediato OU Agendar)
+- **Resultado da simulação** perdeu a linha "Valor final da compra (juros + principal)"
+- **Mensagem WhatsApp** reescrita com todo contexto da jornada: perfil, casa, módulos explorados, quiz (momento + financeiro), simulação (sinal, complemento, financiamento, faixa MCMV), agendamento e contato
+- **Agendamento** removeu formato "Apto decorado"; default passou para "Visita ao imóvel"; grid 2 colunas
+- **Simulador ganhou 2 áreas de ajuda** para leads de baixa escolaridade: banner no topo ("Quer que a gente te ajude a preencher?") + card compacto pós-formulário ("Travou em algum campo? Sem problema.") — ambos levam ao atendimento imediato ou agendamento
 
-### Fase 3 — CRM embutido para a incorporadora
-- Rota `/admin` com login (single user = incorporadora)
-- Kanban de leads: Novo → Em contato → Visita agendada → Negociação → Vendido/Perdido
-- Lista com filtros (score, temperatura, data), export CSV
-- Detalhe do lead: timeline de interações, dados da jornada, notas do corretor
-- Dashboard: métricas de conversão por módulo, taxa de agendamento, tempo médio na jornada
+### Iterações anteriores
+- Conversão de 8 PDFs arquitetônicos em JPEGs via poppler-utils
+- Galerias swipe mobile + lightbox com navegação
+- Cards de casa com preço "A partir de"
+- Master Plan integrado ao módulo Empreendimento
+- Endereço completo + Google Maps embed + direções
+- Numeração sequencial nos módulos do Hub
+- Ajuste do simulador para 35 anos, sinal parcelável, entrada 13% (não 20%)
 
-### Pós-fase 3 / Melhorias técnicas
-- Recalcular `classification` server-side a partir de `quiz_answers` (hoje cliente envia — risco de tampering)
-- Rate limit / honeypot em `POST /api/leads`
-- Normalizar phone para E.164 no backend
-- Deduplicar `interacoes` antes de salvar
-- Migração `@app.on_event` → lifespan handler
-- Retornar 201 Created em `POST /api/leads`
+---
 
-## Arquivos-chave
-- `/app/backend/server.py`
-- `/app/frontend/src/App.js`
-- `/app/frontend/src/context/JourneyContext.jsx`
-- `/app/frontend/src/components/{Header,Hub}.jsx`
-- `/app/frontend/src/components/modules/Modulo*.jsx`
-- `/app/frontend/src/lib/{quizData,conteudo,assets}.js`
-- `/app/memory/PRD.md` (este arquivo)
-- `/app/backend/tests/test_alameda_api.py`
+## Backlog / Prioridades
+
+### P0 (próxima entrega)
+- **Fase 3 — CRM embutido** (backend + frontend + auth + refactor)
+
+### P1
+- **Toast global "Posso te ajudar agora?"** após 90s de inatividade em qualquer módulo (mesmo princípio dos cards do simulador, aplicado globalmente)
+- **Confirmação pós-agendamento pelo WhatsApp do próprio usuário** (fecha ciclo de confiança)
+- **PUT /api/leads/{id}/journey** — implementar endpoint ou remover da spec (hoje frontend consolida tudo num POST final, funciona bem)
+
+### P2
+- Copy mais contextual nos CTAs "Próximo passo" por módulo
+- Analytics básico no admin (leads/dia, split por temperatura, conversão por etapa)
+- Lazy load de imagens pesadas do lightbox
+
+---
+
+## Testing status
+
+- **iteration_5.json (regressão)**: frontend 100% (11/11), backend 91% → após fix 100% (22/22 pytest)
+- Testing agent usado: SIM, em 5 iterações
+- Credenciais teste: N/A (sem auth ainda — virá na Fase 3)
+
+## Key files
+- `/app/backend/server.py` — todas as rotas; considerar splitar ao iniciar Fase 3
+- `/app/backend/tests/test_alameda_api.py` — 22 testes, todos passando
+- `/app/frontend/src/App.js` — router + useScrollTopOnStageChange
+- `/app/frontend/src/context/JourneyContext.jsx` — estado global
+- `/app/frontend/src/components/ModuleFooterCTA.jsx` — rodapé compartilhado dos módulos
+- `/app/frontend/src/lib/quizData.js` — `buildWhatsappUrl`, classificação, insights
+- `/app/frontend/src/lib/simulador.js` — cálculos client-side
+- `/app/frontend/src/lib/tabelaVendas.js` — preços e disponibilidade das 12 unidades
+- `/app/frontend/src/lib/conteudo.js` — 3 modelos (Premium, Família, Essencial) + diferenciais
