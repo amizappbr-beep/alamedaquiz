@@ -78,7 +78,7 @@ export default function ModuloObrigado() {
             Resumo da sua jornada
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Stat label="Score" value={`${leadScore}/150`} subtitle={`Lead ${temperatura}`} />
+            <Stat label="Engajamento" value={`${leadScore}/150`} subtitle={perfilLabel(temperatura)} />
             <Stat label="Módulos" value={`${modulos_visitados.length}/6`} subtitle="explorados" />
             <Stat
               label="Atendimento"
@@ -145,4 +145,10 @@ function Stat({ label, value, subtitle, icon }) {
       </div>
     </div>
   );
+}
+
+function perfilLabel(temperatura) {
+  if (temperatura === "quente") return "Perfil compatível";
+  if (temperatura === "morno") return "Perfil em análise";
+  return "Preparando seu perfil";
 }

@@ -1,0 +1,39 @@
+{
+  "summary": "Iteração 4 (Gate + UX melhorias) testada via Playwright em modo headless contra a URL pública. 10/10 cenários validados: (1) Gate-screen aparece sem localStorage, com checkbox opportunity-optin marcada por padrão. (2) Submit vazio mostra 'Informe seu nome.'; submit com phone curto mostra 'Informe um WhatsApp válido com DDD.' (3) Submit válido (nome 'João Teste' + 27999887766) libera hub-screen e persiste {name, phone(formatado), registered:true, opportunityOptIn:true} no localStorage 'alameda500_journey_v1'. (4) Reload com localStorage popula vai direto pro hub (não reaparece o gate). (5) hub-score-hint diz 'Seu engajamento' (não 'Seu score') e usa 'Explorando opções/Perfil em análise/Perfil compatível com o produto' (sem 'Lead X'). (6) Cards casa-card-{1_12,6_7,2_a_11} renderizam, cada um com casa-preco-{id} mostrando 'A partir de R$ 460.000/380.000/349.000' e contadores '1/1/5 disponíveis' (corretos: Casa 12 vendida; Casa 6 reservada; 5 disp em 2_a_11). (7) Galeria empreendimento: clicar em galeria-item-0 abre lightbox, marca galeria-item-0-visto e atualiza galeria-progresso para '1/6 ambientes vistos'. lightbox-next no item 0 marca item 1 como visto -> '2/6 ambientes vistos'. (8) Quiz perfil 12 perguntas (com perfil-insight-screen + perfil-insight-next-btn entre blocos 1 e 2) navega para modulo-simulador no final (não pro hub). (9) Simulador tem prazo-240/300/360/420 visíveis. Submit com renda 12k/entrada 80k/fgts 50k/unidade 7/prazo 420 mostra resultado-aprovado com 'Parabéns! Seu perfil se encaixa.' e breakdown contém 'Valor final da compra'. (10) Modulo-obrigado usa 'Engajamento'/perfilLabel sem 'Score' nem 'Lead X' no corpo. NÃO houve mudança de schema backend, fluxo POST /api/simulacao funcionou (resultado-aprovado renderizado). Todos os data-testids do escopo da iteração 4 foram validados.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Header.jsx", "issue": "Header global continua mostrando 'Score 115' (label 'Score') na barra superior, divergente da nova linguagem de iteração 4. A spec pediu 'Score' substituído por 'Engajamento' no obrigado — o body do obrigado já usa 'Engajamento', porém o Header (visível em todas as telas pós-gate) ainda diz 'Score'. Recomenda-se trocar para 'Engajamento' para consistência (ou pelo menos no obrigado).", "selector": "[data-testid='hub-screen'] header, header (global)", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Galeria lightbox prev/next", "issue": "Console warning: 'Cannot update a component (JourneyProvider) while rendering a different component (ModuloEmpreendimento)'. Causado por chamar markImagemVista(next) dentro do updater de setLightboxIdx em prev()/next() de ModuloEmpreendimento.jsx (linhas 22-36). Funciona, mas é antipattern do React e pode falhar em concurrent mode. Refatorar para usar useEffect baseado em lightboxIdx, ou agendar com queueMicrotask/setTimeout 0.", "affected_selectors": ["lightbox-prev", "lightbox-next"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_4.json"
+  ],
+  "action_items": [
+    "Atualizar Header.jsx para mostrar 'Engajamento' em vez de 'Score' (consistência com spec da iteração 4).",
+    "Refatorar ModuloEmpreendimento.jsx prev()/next(): mover markImagemVista para fora do updater de setLightboxIdx (ex: useEffect dependendo de lightboxIdx) para eliminar warning 'setState during render'."
+  ],
+  "critical_code_review_comments": [
+    "Gate.jsx: máscara formatPhone não aceita colar números formatados (ex: '+55 27 99988-7766') — apenas dígitos puros. Aceitável para MVP.",
+    "Gate.jsx: validação só checa length>=10 — não valida DDD válido nem 9° dígito de celular. OK para MVP, mas considere melhorar.",
+    "JourneyContext.jsx: classification e leadScore ainda usam 'quente/morno/frio' internamente. A linguagem 'Perfil compatível/análise/preparando' só está nos labels de UI (Hub, Obrigado). OK para legacy, mas considere renomear futuramente.",
+    "ModuloEmpreendimento.jsx prev/next: anti-pattern de chamar setState (markImagemVista) dentro do updater de outro setState — gera warning React. Correção sugerida: useEffect([lightboxIdx]) que chama markImagemVista(lightboxIdx).",
+    "Hub.jsx insights: gerarInsights() é chamada sem memoização e roda a cada render. Para 12 respostas custo é baixo, mas useMemo seria boa prática.",
+    "App.js InnerApp: monta Header apenas se registered, ok. Mas Header não recebe nenhum testid próprio para 'engajamento-label' — adicionar data-testid='header-engajamento' facilitaria testes futuros."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (não testado nesta iteração — backend inalterado)", "frontend": "100% (10/10 dos cenários da iteração 4)"},
+  "test_credentials": "N/A — sem auth (gate apenas coleta nome+phone, sem validação server-side).",
+  "seed_data_creation": "Nenhum dado novo criado. Storage key 'alameda500_journey_v1' usado pelo gate para persistir contato.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteração 4 adiciona Gate (componente em /app/frontend/src/components/Gate.jsx). Sempre limpar localStorage antes de testar gate: `await page.evaluate(\"() => localStorage.clear()\")` + reload. Storage key: 'alameda500_journey_v1'. Para pular o gate em testes de outros módulos, popular antes: `localStorage.setItem('alameda500_journey_v1', JSON.stringify({stage:'hub', registered:true, name:'X', phone:'Y', startedAt:Date.now(), modulos_visitados:[], quiz_answers:{}, interacoes:[], imagens_vistas:[], opportunityOptIn:true}))`. Novos data-testids: gate-screen, gate-form, gate-nome, gate-whatsapp, gate-opportunity-optin, gate-submit-btn, gate-error, casa-preco-{1_12|6_7|2_a_11}, galeria-item-{idx}-visto, galeria-progresso, prazo-420, resultado-aprovado (texto 'Parabéns! Seu perfil se encaixa.'), 'Valor final da compra' no breakdown. Header.jsx ainda diz 'Score' (bug de consistência).",
+  "rca of the issue": "Bug 1 (Header 'Score' vs 'Engajamento'): A iteração 4 atualizou Hub.jsx (hub-score-hint) e ModuloObrigado.jsx (Stat label 'Engajamento') mas Header.jsx ficou de fora do escopo das atualizações de copy. Reproduce: passar pelo gate -> qualquer tela mostra header com 'Score 115' (visível na screenshot). Mitigação: editar Header.jsx label da pílula de score para 'Engajamento'. Bug 2 (warning React em galeria): em ModuloEmpreendimento.jsx, prev() e next() fazem `setLightboxIdx((i) => { ...; markImagemVista(next); return next; })` — chamar markImagemVista (que é setState do JourneyContext) dentro do updater do setState local viola regra do React (não chamar setState em render de outro componente). Reproduce: abrir lightbox e clicar em lightbox-next -> warning no console. Mitigação: useEffect(() => { if (lightboxIdx !== null) markImagemVista(lightboxIdx); }, [lightboxIdx]); e remover o markImagemVista de dentro dos updaters."
+}

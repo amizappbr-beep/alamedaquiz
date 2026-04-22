@@ -229,14 +229,14 @@ export default function ModuloSimulador() {
             {/* Prazo + parcelas sinal */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="5. Prazo do financiamento">
-                <div className="flex gap-2" data-testid="simulador-prazos">
-                  {[240, 300, 360].map((p) => (
+                <div className="flex gap-2 flex-wrap" data-testid="simulador-prazos">
+                  {[240, 300, 360, 420].map((p) => (
                     <button
                       key={p}
                       type="button"
                       data-testid={`prazo-${p}`}
                       onClick={() => setPrazo(p)}
-                      className={`flex-1 rounded-xl border py-3 text-sm font-semibold transition-all ${
+                      className={`flex-1 min-w-[70px] rounded-xl border py-3 text-sm font-semibold transition-all ${
                         prazo === p
                           ? "border-[color:var(--torres-indigo)] bg-[color:var(--torres-indigo)] text-white"
                           : "border-[color:var(--torres-line)] bg-white hover:border-[color:var(--torres-indigo)]/60"

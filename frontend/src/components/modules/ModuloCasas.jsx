@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { useJourney } from "../../context/JourneyContext";
 import { CASA_MODELOS, sugerirCasa } from "../../lib/conteudo";
+import { PRECO_MODELO, UNIDADES, formatBRL } from "../../lib/tabelaVendas";
 import { Check, ArrowRight, Sparkles, Ruler, Square, Bed } from "lucide-react";
 
 export default function ModuloCasas() {
@@ -53,6 +54,10 @@ export default function ModuloCasas() {
           {CASA_MODELOS.map((m, idx) => {
             const selected = casa_preferida === m.id;
             const isSugestao = sugestao?.id === m.id;
+            const preco = PRECO_MODELO[m.id];
+            const disponiveis = UNIDADES.filter(
+              (u) => u.modelo === m.id && u.status === "disponivel"
+            ).length;
             return (
               <button
                 key={m.id}
@@ -76,12 +81,12 @@ export default function ModuloCasas() {
                     className="absolute inset-0"
                     style={{
                       background:
-                        "linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(27,31,46,0.75) 100%)",
+                        "linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(27,31,46,0.8) 100%)",
                     }}
                   />
                   <div className="absolute bottom-4 left-5 right-5 text-white">
                     <div className="text-[10px] uppercase tracking-[0.22em] opacity-85">
-                      {m.numeros} • {m.unidades} {m.unidades > 1 ? "unidades" : "unidade"}
+                      {m.numeros}
                     </div>
                     <div className="serif text-2xl font-semibold">Casa {m.nome}</div>
                   </div>
@@ -94,6 +99,33 @@ export default function ModuloCasas() {
                       Ideal pra você
                     </div>
                   )}
+                </div>
+
+                {/* Price bar */}
+                <div
+                  className="flex items-baseline justify-between gap-3 border-b border-[color:var(--torres-line)] bg-[color:var(--torres-indigo)]/5 px-5 py-3"
+                  data-testid={`casa-preco-${m.id}`}
+                >
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider" style={{ color: "var(--torres-muted)" }}>
+                      A partir de
+                    </div>
+                    <div className="serif text-2xl font-bold tabular-nums" style={{ color: "var(--torres-indigo)" }}>
+                      {formatBRL(preco)}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        disponiveis > 0
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-red-50 text-red-700"
+                      }`}
+                    >
+                      <span className={`inline-block h-1.5 w-1.5 rounded-full ${disponiveis > 0 ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`} />
+                      {disponiveis > 0 ? `${disponiveis} disponível${disponiveis > 1 ? "is" : ""}` : "Indisponível"}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Body */}

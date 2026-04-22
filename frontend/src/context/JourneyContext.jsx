@@ -32,9 +32,12 @@ const INITIAL = {
   agendamento: null,
   solicita_atendimento_imediato: false,
   interacoes: [],
+  imagens_vistas: [],
   startedAt: Date.now(),
   name: "",
   phone: "",
+  registered: false,
+  opportunityOptIn: false,
 };
 
 export function JourneyProvider({ children }) {
@@ -139,6 +142,17 @@ export function JourneyProvider({ children }) {
   const setContato = ({ name, phone }) =>
     setState((s) => ({ ...s, name, phone }));
 
+  const setRegistered = (val) => setState((s) => ({ ...s, registered: val }));
+  const setOpportunityOptIn = (val) => setState((s) => ({ ...s, opportunityOptIn: val }));
+
+  const markImagemVista = (idx) =>
+    setState((s) => ({
+      ...s,
+      imagens_vistas: s.imagens_vistas.includes(idx)
+        ? s.imagens_vistas
+        : [...s.imagens_vistas, idx],
+    }));
+
   const addInteracao = (tipo, detalhe) =>
     setState((s) => ({
       ...s,
@@ -171,6 +185,9 @@ export function JourneyProvider({ children }) {
     setAgendamento,
     setAtendimentoImediato,
     setContato,
+    setRegistered,
+    setOpportunityOptIn,
+    markImagemVista,
     addInteracao,
     reset,
   };

@@ -61,14 +61,16 @@ export default function ModuloResultadoSimulacao() {
               </div>
               <div>
                 <div className="text-[11px] uppercase tracking-[0.22em] text-emerald-700">
-                  Pré-qualificado
+                  🎉 Pré-qualificado
                 </div>
                 <h1 className="serif mt-1 text-3xl font-semibold leading-tight sm:text-4xl" style={{ color: "var(--torres-ink)" }}>
-                  Boa notícia! Seu perfil se encaixa.
+                  Parabéns! Seu perfil se encaixa.
                 </h1>
                 <p className="mt-2 max-w-xl text-sm sm:text-base" style={{ color: "var(--torres-muted)" }}>
-                  Com a renda informada e os recursos próprios, você tem
-                  capacidade pra essa compra. Vamos garantir sua unidade?
+                  Com a renda informada e seus recursos próprios, você tem
+                  capacidade para esta compra. Vamos dar o próximo passo e
+                  garantir sua unidade antes que ela seja reservada por outro
+                  cliente?
                 </p>
               </div>
             </div>
@@ -148,21 +150,35 @@ export default function ModuloResultadoSimulacao() {
               )}
             </div>
 
-            <div className="mt-6 flex items-center justify-between rounded-2xl border border-[color:var(--torres-line)] p-4">
-              <div className="text-xs" style={{ color: "var(--torres-muted)" }}>
-                <div>Valor total do imóvel</div>
-                <div className="serif mt-0.5 text-xl font-semibold" style={{ color: "var(--torres-ink)" }}>
+            <div className="mt-6 space-y-3 rounded-2xl border border-[color:var(--torres-line)] p-4 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs uppercase tracking-wider" style={{ color: "var(--torres-muted)" }}>
+                  Valor do imóvel
+                </span>
+                <span className="serif text-lg font-semibold" style={{ color: "var(--torres-ink)" }}>
                   {formatBRL(raw.valor_imovel)}
-                </div>
+                </span>
               </div>
-              <div className="text-right text-xs" style={{ color: "var(--torres-muted)" }}>
-                <div>Parcela bancária</div>
-                <div
-                  className="serif mt-0.5 text-xl font-semibold"
-                  style={{ color: aprovado ? "#059669" : "#d97706" }}
-                >
+              <div className="flex items-center justify-between">
+                <span className="text-xs uppercase tracking-wider" style={{ color: "var(--torres-muted)" }}>
+                  Parcela bancária
+                </span>
+                <span className="serif text-lg font-semibold" style={{ color: aprovado ? "#059669" : "#d97706" }}>
                   {formatBRL(raw.parcela_bancaria)}/mês
-                </div>
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs uppercase tracking-wider" style={{ color: "var(--torres-muted)" }}>
+                  Valor final da compra <span className="normal-case opacity-70">(juros + principal)</span>
+                </span>
+                <span className="serif text-lg font-semibold" style={{ color: "var(--torres-ink)" }}>
+                  {formatBRL(
+                    raw.sinal_total +
+                      raw.complemento_ate_chaves +
+                      raw.parcela_bancaria * raw.prazo_meses +
+                      (raw.residual || 0)
+                  )}
+                </span>
               </div>
             </div>
           </div>
@@ -175,11 +191,11 @@ export default function ModuloResultadoSimulacao() {
             {aprovado ? (
               <>
                 <h3 className="serif mt-2 text-xl font-semibold" style={{ color: "var(--torres-ink)" }}>
-                  Sua unidade pode ser sua ainda hoje.
+                  Vamos dar o próximo passo?
                 </h3>
                 <p className="mt-2 text-sm" style={{ color: "var(--torres-muted)" }}>
-                  Só 7 unidades disponíveis. Garanta a sua com uma visita ou
-                  conversa imediata com nosso time.
+                  Só 7 unidades disponíveis no Alameda 500. Garanta a sua agora
+                  com uma conversa direta ou uma visita presencial.
                 </p>
                 <div className="mt-5 space-y-2">
                   <button

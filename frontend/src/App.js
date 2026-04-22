@@ -14,9 +14,11 @@ import ModuloCorretor from "./components/modules/ModuloCorretor";
 import ModuloAgendamento from "./components/modules/ModuloAgendamento";
 import ModuloImediato from "./components/modules/ModuloImediato";
 import ModuloObrigado from "./components/modules/ModuloObrigado";
+import Gate from "./components/Gate";
 
 function Router() {
-  const { stage } = useJourney();
+  const { stage, registered } = useJourney();
+  if (!registered) return <Gate />;
   switch (stage) {
     case "empreendimento":
       return <ModuloEmpreendimento />;
@@ -49,9 +51,18 @@ export default function App() {
     <div className="App" data-testid="app-root">
       <JourneyProvider>
         <Toaster position="top-center" richColors />
-        <Header />
-        <Router />
+        <InnerApp />
       </JourneyProvider>
     </div>
+  );
+}
+
+function InnerApp() {
+  const { registered } = useJourney();
+  return (
+    <>
+      {registered && <Header />}
+      <Router />
+    </>
   );
 }

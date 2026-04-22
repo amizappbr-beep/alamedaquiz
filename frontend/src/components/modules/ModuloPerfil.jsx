@@ -43,7 +43,7 @@ export default function ModuloPerfil() {
     if (!isLast) {
       setCurrent((c) => c + 1);
     } else {
-      goTo("hub");
+      goTo("simulador");
     }
   };
 
@@ -210,7 +210,7 @@ export default function ModuloPerfil() {
                 selected ? "btn-primary-torres" : "cursor-not-allowed bg-[color:var(--torres-line)] text-[color:var(--torres-muted)]"
               }`}
             >
-              {isLast ? (classification ? `Perfil: ${classification}` : "Ver meu perfil") : isEndOfBloco1 ? "Ver insight parcial" : "Próxima"}
+              {isLast ? "Simular meu financiamento" : isEndOfBloco1 ? "Ver insight parcial" : "Próxima"}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </button>
           </div>

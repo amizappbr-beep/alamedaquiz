@@ -226,17 +226,22 @@ export default function Hub() {
         >
           <div>
             <div className="text-[11px] uppercase tracking-[0.22em]" style={{ color: "var(--torres-muted)" }}>
-              Seu score de engajamento
+              Seu engajamento
             </div>
             <div className="serif mt-1 text-2xl font-semibold" style={{ color: "var(--torres-ink)" }}>
               {leadScore}{" "}
-              <span className="text-sm font-medium capitalize" style={{ color: "var(--torres-muted)" }}>
-                / 150 • Lead {temperatura}
+              <span className="text-sm font-medium" style={{ color: "var(--torres-muted)" }}>
+                / 150 •{" "}
+                {temperatura === "quente"
+                  ? "Perfil compatível com o produto"
+                  : temperatura === "morno"
+                  ? "Perfil em análise"
+                  : "Explorando opções"}
               </span>
             </div>
           </div>
           <div className="text-xs" style={{ color: "var(--torres-muted)" }}>
-            Quanto mais você explora, maior a prioridade no atendimento.
+            Quanto mais você explora, melhor conseguimos te atender.
           </div>
         </div>
       </div>
