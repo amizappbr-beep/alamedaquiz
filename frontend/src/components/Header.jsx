@@ -4,9 +4,9 @@ import { Flame, ThermometerSun, Snowflake, Home, ArrowLeft } from "lucide-react"
 
 const TEMP_ICON = { quente: Flame, morno: ThermometerSun, frio: Snowflake };
 const TEMP_COLOR = {
-  quente: "#c24a1e",
-  morno: "#8a6a2b",
-  frio: "#6471A2",
+  quente: "#059669",
+  morno: "#6471A2",
+  frio: "#6C7189",
 };
 
 export default function Header() {
@@ -67,9 +67,13 @@ export default function Header() {
           <div
             className="hidden items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold sm:flex"
             data-testid="header-modulos"
+            style={{
+              backgroundColor: modulos_visitados.length >= 3 ? "#ecfdf5" : "#fff",
+              color: modulos_visitados.length >= 3 ? "#047857" : undefined,
+            }}
           >
-            <span style={{ color: "var(--torres-muted)" }}>Módulos</span>
-            <span style={{ color: "var(--torres-indigo)" }}>
+            <span style={{ color: modulos_visitados.length >= 3 ? "#047857" : "var(--torres-muted)" }}>Módulos</span>
+            <span style={{ color: modulos_visitados.length >= 3 ? "#059669" : "var(--torres-indigo)" }}>
               {modulos_visitados.length}/6
             </span>
           </div>
@@ -77,7 +81,7 @@ export default function Header() {
             data-testid="header-score"
             className="flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-semibold"
             style={{
-              backgroundColor: "rgba(100,113,162,0.08)",
+              backgroundColor: temperatura === "quente" ? "#d1fae5" : "rgba(100,113,162,0.08)",
               color: TEMP_COLOR[temperatura],
             }}
           >

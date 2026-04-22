@@ -8,6 +8,7 @@ import ModuloEmpreendimento from "./components/modules/ModuloEmpreendimento";
 import ModuloCasas from "./components/modules/ModuloCasas";
 import ModuloPerfil from "./components/modules/ModuloPerfil";
 import ModuloSimulador from "./components/modules/ModuloSimulador";
+import ModuloResultadoSimulacao from "./components/modules/ModuloResultadoSimulacao";
 import ModuloDiferenciais from "./components/modules/ModuloDiferenciais";
 import ModuloCorretor from "./components/modules/ModuloCorretor";
 import ModuloAgendamento from "./components/modules/ModuloAgendamento";
@@ -25,6 +26,8 @@ function Router() {
       return <ModuloPerfil />;
     case "simulador":
       return <ModuloSimulador />;
+    case "resultado_simulacao":
+      return <ModuloResultadoSimulacao />;
     case "diferenciais":
       return <ModuloDiferenciais />;
     case "corretor":

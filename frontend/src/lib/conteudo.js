@@ -164,10 +164,9 @@ export const MODULOS = [
   {
     id: "simulador",
     titulo: "Simular meu financiamento",
-    descricao: "Calcule parcela estimada com regras MCMV / Caixa.",
+    descricao: "Calcule parcela e proposta com regras MCMV / Caixa.",
     icon: "Calculator",
     cor: "#6471A2",
-    badge: "Em breve",
   },
   {
     id: "diferenciais",

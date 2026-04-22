@@ -26,13 +26,152 @@ def _quiz_answers():
 
 
 # -------------------- Health --------------------
-def test_root_v2(client):
+def test_root_v21(client):
     r = client.get(f"{API}/")
     assert r.status_code == 200
     data = r.json()
     assert data.get("status") == "ok"
-    assert data.get("version") == "2.0"
+    assert data.get("version") == "2.1"
     assert "Alameda" in data.get("message", "")
+
+
+# -------------------- Unidades (v2.1) --------------------
+def test_get_unidades(client):
+    r = client.get(f"{API}/unidades")
+    assert r.status_code == 200
+    data = r.json()
+    assert "unidades" in data and "resumo" in data and "condicoes" in data
+    assert len(data["unidades"]) == 12
+    resumo = data["resumo"]
+    assert resumo == {"total": 12, "disponivel": 7, "reservada": 3, "vendida": 2}
+    cond = data["condicoes"]
+    for k in ("pct_sinal", "pct_ate_chaves", "pct_financiado", "meses_obra", "residual_max", "residual_meses"):
+        assert k in cond
+    # status set
+    statuses = {u["status"] for u in data["unidades"]}
+    assert statuses == {"disponivel", "reservada", "vendida"}
+
+
+# -------------------- Simulacao (v2.1) --------------------
+def test_simulacao_unidade7_low_renda_reprovado(client):
+    payload = {
+        "unidade_numero": 7,
+        "renda_bruta": 6500,
+        "entrada": 50000,
+        "fgts": 40000,
+        "prazo_meses": 360,
+        "parcelas_sinal": 3,
+    }
+    r = client.post(f"{API}/simulacao", json=payload)
+    assert r.status_code == 200, r.text
+    data = r.json()
+    assert data["aprovado"] is False
+    assert data["faixa"]["nome"] == "Faixa 3"
+    # Casa Família 6/7 = 380.000 → sinal 13% = 49.400
+    assert data["sinal_total"] == 49400.0
+    assert "valor_financiado" in data
+    assert "parcela_bancaria" in data
+    assert isinstance(data["razoes"], list)
+    assert len(data["razoes"]) >= 1
+    # parcela ~ 2025 > 1950 (30% of 6500) → razão deve mencionar 30%
+    assert data["parcela_bancaria"] > data["limite_comprometimento"]
+    assert data["valor_imovel"] == 380000
+
+
+def test_simulacao_unidade7_high_renda_aprovado(client):
+    payload = {
+        "unidade_numero": 7,
+        "renda_bruta": 12000,
+        "entrada": 80000,
+        "fgts": 50000,
+        "prazo_meses": 360,
+        "parcelas_sinal": 3,
+    }
+    r = client.post(f"{API}/simulacao", json=payload)
+    assert r.status_code == 200, r.text
+    data = r.json()
+    assert data["aprovado"] is True
+    # SBPE faixa (renda > 8600)
+    assert data["faixa"]["nome"] == "SBPE"
+    assert data["aprovado_capacidade"] is True
+    assert data["cobre_ate_chaves"] is True
+    assert data["valor_financiado"] > 0
+    assert data["razoes"] == []
+
+
+def test_simulacao_unidade_vendida_409(client):
+    payload = {"unidade_numero": 12, "renda_bruta": 10000, "entrada": 80000, "fgts": 50000}
+    r = client.post(f"{API}/simulacao", json=payload)
+    assert r.status_code == 409
+    assert "vendida" in r.text.lower()
+
+
+def test_simulacao_unidade_reservada_409(client):
+    payload = {"unidade_numero": 6, "renda_bruta": 10000, "entrada": 80000, "fgts": 50000}
+    r = client.post(f"{API}/simulacao", json=payload)
+    assert r.status_code == 409
+
+
+def test_simulacao_unidade_inexistente_404(client):
+    payload = {"unidade_numero": 999, "renda_bruta": 10000, "entrada": 80000, "fgts": 50000}
+    r = client.post(f"{API}/simulacao", json=payload)
+    assert r.status_code == 404
+
+
+def test_simulacao_sem_unidade_nem_modelo_400(client):
+    payload = {"renda_bruta": 10000, "entrada": 80000, "fgts": 50000}
+    r = client.post(f"{API}/simulacao", json=payload)
+    assert r.status_code == 400
+
+
+def test_simulacao_modelo_id_funciona(client):
+    payload = {"modelo_id": "6_7", "renda_bruta": 12000, "entrada": 80000, "fgts": 50000}
+    r = client.post(f"{API}/simulacao", json=payload)
+    assert r.status_code == 200
+    assert r.json()["valor_imovel"] == 380000
+
+
+def test_simulacao_residual(client):
+    payload = {
+        "unidade_numero": 7, "renda_bruta": 12000, "entrada": 80000, "fgts": 50000,
+        "usar_residual_pos_chaves": True,
+    }
+    r = client.post(f"{API}/simulacao", json=payload)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["residual"] > 0
+    assert data["parcela_residual"] > 0
+
+
+# -------------------- Lead com simulação expandida (compat v2.1) --------------------
+def test_create_lead_with_expanded_simulacao(client):
+    payload = {
+        "name": "TEST_SimExpanded",
+        "phone": "27955554444",
+        "modulos_visitados": ["empreendimento", "casas", "simulador"],
+        "casa_preferida": "6_7",
+        "simulacao": {
+            "renda_bruta": 12000,
+            "entrada": 80000,
+            "fgts": 50000,
+            "prazo_meses": 360,
+            "parcela_estimada": 2200,
+            "faixa_mcmv": "SBPE",
+            "unidade_numero": 7,
+            "valor_imovel": 380000,
+            "sinal_total": 49400,
+            "valor_financiado": 144000,
+            "aprovado": True,
+        },
+        "solicita_atendimento_imediato": True,
+        "tempo_total_segundos": 120,
+    }
+    r = client.post(f"{API}/leads", json=payload)
+    assert r.status_code == 200, r.text
+    data = r.json()
+    assert data["simulacao"]["unidade_numero"] == 7
+    assert data["simulacao"]["aprovado"] is True
+    assert data["simulacao"]["valor_imovel"] == 380000
 
 
 # -------------------- Lead drafts (no name/phone) --------------------

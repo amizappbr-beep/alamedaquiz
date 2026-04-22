@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useJourney } from "../../context/JourneyContext";
 import { GALLERY_ITEMS } from "../../lib/assets";
-import { X, ArrowRight } from "lucide-react";
+import { X, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function ModuloEmpreendimento() {
   const { markModuloVisitado, goTo, addInteracao } = useJourney();
-  const [lightbox, setLightbox] = useState(null);
+  const [lightboxIdx, setLightboxIdx] = useState(null);
 
   useEffect(() => {
     markModuloVisitado("empreendimento");
@@ -14,8 +14,28 @@ export default function ModuloEmpreendimento() {
 
   const openImage = (item, idx) => {
     addInteracao("imagem_aberta", { titulo: item.title, index: idx });
-    setLightbox({ ...item, idx });
+    setLightboxIdx(idx);
   };
+
+  const prev = useCallback(() => {
+    setLightboxIdx((i) => (i === null ? null : (i - 1 + GALLERY_ITEMS.length) % GALLERY_ITEMS.length));
+  }, []);
+  const next = useCallback(() => {
+    setLightboxIdx((i) => (i === null ? null : (i + 1) % GALLERY_ITEMS.length));
+  }, []);
+
+  useEffect(() => {
+    if (lightboxIdx === null) return;
+    const handler = (e) => {
+      if (e.key === "ArrowLeft") prev();
+      else if (e.key === "ArrowRight") next();
+      else if (e.key === "Escape") setLightboxIdx(null);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lightboxIdx, prev, next]);
+
+  const current = lightboxIdx !== null ? GALLERY_ITEMS[lightboxIdx] : null;
 
   return (
     <section
@@ -103,32 +123,60 @@ export default function ModuloEmpreendimento() {
         </div>
       </div>
 
-      {/* Lightbox */}
-      {lightbox && (
+      {/* Lightbox with navigation */}
+      {current && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 fade-up"
-          onClick={() => setLightbox(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 fade-up"
+          onClick={() => setLightboxIdx(null)}
           data-testid="lightbox"
         >
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setLightbox(null);
+              setLightboxIdx(null);
             }}
             data-testid="lightbox-close"
-            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur hover:bg-white/20"
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20"
           >
             <X className="h-5 w-5" />
           </button>
+
+          {/* Prev/Next */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              prev();
+            }}
+            data-testid="lightbox-prev"
+            className="absolute left-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur transition-all hover:scale-110 hover:bg-white/25 sm:left-6"
+            aria-label="Anterior"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              next();
+            }}
+            data-testid="lightbox-next"
+            className="absolute right-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur transition-all hover:scale-110 hover:bg-white/25 sm:right-6"
+            aria-label="Próxima"
+          >
+            <ChevronRight className="h-6 w-6" />
+          </button>
+
           <div className="relative max-h-[90vh] max-w-6xl" onClick={(e) => e.stopPropagation()}>
             <img
-              src={lightbox.src}
-              alt={lightbox.title}
+              src={current.src}
+              alt={current.title}
               className="max-h-[80vh] w-full rounded-xl object-contain"
             />
             <div className="mt-3 text-center text-white">
-              <div className="serif text-lg font-semibold">{lightbox.title}</div>
-              <div className="text-sm opacity-80">{lightbox.subtitle}</div>
+              <div className="serif text-lg font-semibold">{current.title}</div>
+              <div className="text-sm opacity-80">{current.subtitle}</div>
+              <div className="mt-2 text-xs opacity-60">
+                {lightboxIdx + 1} de {GALLERY_ITEMS.length} • use ← → ou toque nas setas
+              </div>
             </div>
           </div>
         </div>

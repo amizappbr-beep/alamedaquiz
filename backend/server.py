@@ -32,8 +32,8 @@ class QuizAnswer(BaseModel):
 
 class Agendamento(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    data: str  # ISO date yyyy-mm-dd
-    horario: str  # HH:mm
+    data: str
+    horario: str
     formato: Literal["decorado", "imovel", "videochamada"]
     observacao: Optional[str] = None
 
@@ -46,6 +46,11 @@ class Simulacao(BaseModel):
     prazo_meses: Optional[int] = None
     parcela_estimada: Optional[float] = None
     faixa_mcmv: Optional[str] = None
+    unidade_numero: Optional[int] = None
+    valor_imovel: Optional[float] = None
+    sinal_total: Optional[float] = None
+    valor_financiado: Optional[float] = None
+    aprovado: Optional[bool] = None
 
 
 class Interacao(BaseModel):
@@ -57,22 +62,19 @@ class Interacao(BaseModel):
 
 
 class LeadCreate(BaseModel):
-    # Identificação (pode estar vazia em rascunho)
     name: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
-
-    # Jornada
     modulos_visitados: List[str] = Field(default_factory=list)
     quiz_answers: List[QuizAnswer] = Field(default_factory=list)
     classification: Optional[Literal["quente", "morno", "frio"]] = None
-    casa_preferida: Optional[str] = None  # id do modelo: 1_12 | 6_7 | 2_a_11
+    casa_preferida: Optional[str] = None
     simulacao: Optional[Simulacao] = None
     agendamento: Optional[Agendamento] = None
     solicita_atendimento_imediato: bool = False
     interacoes: List[Interacao] = Field(default_factory=list)
     tempo_total_segundos: int = 0
-    origem: Optional[str] = None  # utm_source etc.
+    origem: Optional[str] = None
 
 
 class Lead(BaseModel):
@@ -91,30 +93,55 @@ class Lead(BaseModel):
     interacoes: List[Interacao] = Field(default_factory=list)
     tempo_total_segundos: int = 0
     lead_score: int = 0
-    temperatura: str = "frio"  # quente | morno | frio
+    temperatura: str = "frio"
     origem: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+# -------------------- Tabela de vendas --------------------
+UNIDADES_TABELA = [
+    {"numero": 1, "modelo": "1_12", "nome": "Premium", "status": "disponivel", "preco": 460000},
+    {"numero": 2, "modelo": "2_a_11", "nome": "Essencial", "status": "reservada", "preco": 349000},
+    {"numero": 3, "modelo": "2_a_11", "nome": "Essencial", "status": "disponivel", "preco": 349000},
+    {"numero": 4, "modelo": "2_a_11", "nome": "Essencial", "status": "disponivel", "preco": 349000},
+    {"numero": 5, "modelo": "2_a_11", "nome": "Essencial", "status": "disponivel", "preco": 349000},
+    {"numero": 6, "modelo": "6_7", "nome": "Família", "status": "reservada", "preco": 380000},
+    {"numero": 7, "modelo": "6_7", "nome": "Família", "status": "disponivel", "preco": 380000},
+    {"numero": 8, "modelo": "2_a_11", "nome": "Essencial", "status": "vendida", "preco": 349000},
+    {"numero": 9, "modelo": "2_a_11", "nome": "Essencial", "status": "disponivel", "preco": 349000},
+    {"numero": 10, "modelo": "2_a_11", "nome": "Essencial", "status": "reservada", "preco": 349000},
+    {"numero": 11, "modelo": "2_a_11", "nome": "Essencial", "status": "disponivel", "preco": 349000},
+    {"numero": 12, "modelo": "1_12", "nome": "Premium", "status": "vendida", "preco": 460000},
+]
+
+FAIXAS_MCMV_SRV = [
+    {"id": "1", "nome": "Faixa 1", "renda_max": 2850, "taxa_aa": 0.045, "subsidio": 55000},
+    {"id": "2", "nome": "Faixa 2", "renda_max": 4700, "taxa_aa": 0.055, "subsidio": 30000},
+    {"id": "3", "nome": "Faixa 3", "renda_max": 8600, "taxa_aa": 0.0775, "subsidio": 0},
+    {"id": "sbpe", "nome": "SBPE", "renda_max": 10**9, "taxa_aa": 0.105, "subsidio": 0},
+]
+
+CONDICOES = {
+    "pct_sinal": 0.13,
+    "pct_ate_chaves": 0.20,
+    "pct_financiado": 0.80,
+    "meses_obra": 18,
+    "residual_max": 20000,
+    "residual_meses": 20,
+}
+
+
 # -------------------- Business logic --------------------
 def compute_lead_score(payload: LeadCreate) -> int:
-    """
-    Pontuação 0–175 (cap em 150 para exibição).
-    Pondera engajamento + qualificação.
-    """
     score = 0
     mods = set(payload.modulos_visitados)
-
-    # Engajamento por módulo
     if "empreendimento" in mods:
         score += 10
     if "casas" in mods and payload.casa_preferida:
         score += 15
     if "diferenciais" in mods:
         score += 5
-
-    # Quiz de perfil (classificação)
     if "perfil" in mods and len(payload.quiz_answers) >= 6:
         if payload.classification == "quente":
             score += 30
@@ -122,21 +149,14 @@ def compute_lead_score(payload: LeadCreate) -> int:
             score += 20
         else:
             score += 10
-
-    # Simulador
     if "simulador" in mods and payload.simulacao and payload.simulacao.renda_bruta:
         score += 25
-
-    # Intenção de compra (maior peso)
     if payload.agendamento:
         score += 40
     if payload.solicita_atendimento_imediato:
         score += 50
-
-    # Tempo na página (5 pontos a cada 30s, máx 20)
     tempo_pts = min(20, (payload.tempo_total_segundos // 30) * 5)
     score += tempo_pts
-
     return min(150, score)
 
 
@@ -148,15 +168,140 @@ def compute_temperature(score: int) -> str:
     return "frio"
 
 
+def _identificar_faixa(renda: float):
+    for f in FAIXAS_MCMV_SRV:
+        if renda <= f["renda_max"]:
+            return f
+    return FAIXAS_MCMV_SRV[-1]
+
+
+def _parcela_price(pv: float, taxa_aa: float, meses: int) -> float:
+    if pv <= 0 or meses <= 0:
+        return 0
+    taxa_am = (1 + taxa_aa) ** (1 / 12) - 1
+    if taxa_am == 0:
+        return pv / meses
+    return (pv * taxa_am * (1 + taxa_am) ** meses) / ((1 + taxa_am) ** meses - 1)
+
+
 # -------------------- Routes --------------------
 @api_router.get("/")
 async def root():
-    return {"message": "Alameda 500 — Concierge Digital API", "status": "ok", "version": "2.0"}
+    return {"message": "Alameda 500 — Concierge Digital API", "status": "ok", "version": "2.1"}
+
+
+@api_router.get("/unidades")
+async def get_unidades():
+    disponiveis = sum(1 for u in UNIDADES_TABELA if u["status"] == "disponivel")
+    reservadas = sum(1 for u in UNIDADES_TABELA if u["status"] == "reservada")
+    vendidas = sum(1 for u in UNIDADES_TABELA if u["status"] == "vendida")
+    return {
+        "unidades": UNIDADES_TABELA,
+        "resumo": {
+            "total": len(UNIDADES_TABELA),
+            "disponivel": disponiveis,
+            "reservada": reservadas,
+            "vendida": vendidas,
+        },
+        "condicoes": CONDICOES,
+    }
+
+
+class SimulacaoInput(BaseModel):
+    unidade_numero: Optional[int] = None
+    modelo_id: Optional[str] = None
+    renda_bruta: float
+    entrada: float = 0
+    fgts: float = 0
+    prazo_meses: int = 360
+    parcelas_sinal: int = 3
+    usar_residual_pos_chaves: bool = False
+
+
+@api_router.post("/simulacao")
+async def simular(payload: SimulacaoInput):
+    unidade = None
+    valor_imovel = None
+    if payload.unidade_numero is not None:
+        unidade = next((u for u in UNIDADES_TABELA if u["numero"] == payload.unidade_numero), None)
+        if unidade is None:
+            raise HTTPException(status_code=404, detail="Unidade não encontrada.")
+        if unidade["status"] != "disponivel":
+            raise HTTPException(
+                status_code=409, detail=f"Unidade {payload.unidade_numero} está {unidade['status']}."
+            )
+        valor_imovel = unidade["preco"]
+    elif payload.modelo_id:
+        disp = [u for u in UNIDADES_TABELA if u["modelo"] == payload.modelo_id and u["status"] == "disponivel"]
+        if not disp:
+            raise HTTPException(status_code=404, detail="Nenhuma unidade disponível para o modelo.")
+        unidade = disp[0]
+        valor_imovel = disp[0]["preco"]
+    else:
+        raise HTTPException(status_code=400, detail="Informe unidade_numero ou modelo_id.")
+
+    renda = payload.renda_bruta
+    faixa = _identificar_faixa(renda)
+
+    sinal_total = valor_imovel * CONDICOES["pct_sinal"]
+    ate_chaves_total = valor_imovel * CONDICOES["pct_ate_chaves"]
+    complemento = ate_chaves_total - sinal_total
+    meses_comp = max(1, CONDICOES["meses_obra"] - payload.parcelas_sinal)
+
+    residual = min(CONDICOES["residual_max"], valor_imovel * 0.05) if payload.usar_residual_pos_chaves else 0
+    financiado_bruto = valor_imovel * CONDICOES["pct_financiado"] - residual
+
+    recursos_proprios = max(0, (payload.entrada or 0) + (payload.fgts or 0) - ate_chaves_total)
+    financiado_liquido = max(0, financiado_bruto - recursos_proprios)
+
+    parcela_bancaria = _parcela_price(financiado_liquido, faixa["taxa_aa"], payload.prazo_meses)
+    parcela_sinal = sinal_total / payload.parcelas_sinal
+    parcela_complemento = complemento / meses_comp
+    parcela_residual = residual / CONDICOES["residual_meses"] if residual > 0 else 0
+
+    limite = renda * 0.30
+    aprovado_capacidade = parcela_bancaria <= limite
+    cobre_ate_chaves = (payload.entrada or 0) + (payload.fgts or 0) >= ate_chaves_total * 0.95
+    aprovado = aprovado_capacidade and cobre_ate_chaves and financiado_liquido > 0
+
+    razoes = []
+    if not aprovado_capacidade:
+        razoes.append(
+            f"Parcela estimada de R$ {parcela_bancaria:.0f} supera 30% da renda (limite R$ {limite:.0f})."
+        )
+    if not cobre_ate_chaves:
+        razoes.append(
+            f"Recursos próprios (entrada + FGTS) precisam cobrir ~R$ {ate_chaves_total:.0f} até as chaves."
+        )
+
+    return {
+        "unidade": unidade,
+        "valor_imovel": valor_imovel,
+        "faixa": faixa,
+        "sinal_total": round(sinal_total, 2),
+        "parcela_sinal": round(parcela_sinal, 2),
+        "parcelas_sinal": payload.parcelas_sinal,
+        "complemento_ate_chaves": round(complemento, 2),
+        "parcela_complemento": round(parcela_complemento, 2),
+        "meses_complemento": meses_comp,
+        "ate_chaves_total": round(ate_chaves_total, 2),
+        "valor_financiado": round(financiado_liquido, 2),
+        "valor_financiado_bruto": round(financiado_bruto, 2),
+        "parcela_bancaria": round(parcela_bancaria, 2),
+        "prazo_meses": payload.prazo_meses,
+        "taxa_aa": faixa["taxa_aa"],
+        "residual": round(residual, 2),
+        "parcela_residual": round(parcela_residual, 2),
+        "limite_comprometimento": round(limite, 2),
+        "aprovado_capacidade": aprovado_capacidade,
+        "cobre_ate_chaves": cobre_ate_chaves,
+        "aprovado": aprovado,
+        "razoes": razoes,
+    }
 
 
 @api_router.post("/leads", response_model=Lead)
 async def create_lead(payload: LeadCreate):
-    # Validação mínima: para leads "finalizados" exigimos nome + phone
     finalizing = payload.solicita_atendimento_imediato or payload.agendamento is not None
     if finalizing:
         if not payload.name or not payload.name.strip():
@@ -171,7 +316,7 @@ async def create_lead(payload: LeadCreate):
         name=(payload.name or "").strip() or None,
         phone=(payload.phone or "").strip() or None,
         email=(payload.email or "").strip() or None,
-        modulos_visitados=list(dict.fromkeys(payload.modulos_visitados)),  # dedup mantendo ordem
+        modulos_visitados=list(dict.fromkeys(payload.modulos_visitados)),
         quiz_answers=payload.quiz_answers,
         classification=payload.classification,
         casa_preferida=payload.casa_preferida,
@@ -188,7 +333,6 @@ async def create_lead(payload: LeadCreate):
     doc = lead.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
     doc['updated_at'] = doc['updated_at'].isoformat()
-    # Normalise nested datetimes
     for inter in doc.get('interacoes', []):
         if isinstance(inter.get('timestamp'), datetime):
             inter['timestamp'] = inter['timestamp'].isoformat()
@@ -256,7 +400,6 @@ async def leads_summary():
     }
 
 
-# Include router
 app.include_router(api_router)
 
 app.add_middleware(

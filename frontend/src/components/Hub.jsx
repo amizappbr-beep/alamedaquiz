@@ -1,6 +1,7 @@
 import React from "react";
 import { useJourney } from "../context/JourneyContext";
 import { MODULOS } from "../lib/conteudo";
+import { gerarInsights } from "../lib/quizData";
 import {
   ArrowRight,
   Building2,
@@ -12,6 +13,7 @@ import {
   MapPin,
   Lock,
   Check,
+  TrendingUp,
 } from "lucide-react";
 import { ALAMEDA_IMAGES } from "../lib/assets";
 
@@ -25,129 +27,97 @@ export default function Hub() {
     temperatura,
     casa_preferida,
     classification,
+    quiz_answers,
+    simulacao,
   } = useJourney();
 
   const corretorHabilitado = modulos_visitados.length >= 2;
+  const insights = gerarInsights(quiz_answers).slice(0, 3);
 
   return (
     <section
       data-testid="hub-screen"
       className="relative min-h-[calc(100vh-60px)] w-full bg-[color:var(--torres-cream)]"
     >
-      {/* Hero faixa */}
+      {/* Hero */}
       <div className="relative overflow-hidden border-b border-[color:var(--torres-line)]">
         <div className="absolute inset-0 -z-10">
-          <img
-            src={ALAMEDA_IMAGES.fachadaDia}
-            alt=""
-            className="h-full w-full object-cover opacity-[0.18]"
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(180deg, rgba(251,250,252,0.4) 0%, var(--torres-cream) 100%)",
-            }}
-          />
+          <img src={ALAMEDA_IMAGES.fachadaDia} alt="" className="h-full w-full object-cover opacity-[0.18]" />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(251,250,252,0.4) 0%, var(--torres-cream) 100%)" }} />
         </div>
         <div className="mx-auto max-w-[1320px] px-6 py-12 sm:px-10 sm:py-16 lg:px-16 lg:py-20">
-          <div className="fade-up flex items-center gap-2 text-[11px] uppercase tracking-[0.22em]"
-            style={{ color: "var(--torres-indigo)" }}
-          >
+          <div className="fade-up flex items-center gap-2 text-[11px] uppercase tracking-[0.22em]" style={{ color: "var(--torres-indigo)" }}>
             <MapPin className="h-3 w-3" />
             Alterosas, Serra — ES
           </div>
-          <h1
-            className="fade-up fade-up-delay-1 serif mt-3 max-w-3xl text-4xl font-semibold leading-[1.04] sm:text-5xl lg:text-[60px]"
-            style={{ color: "var(--torres-ink)" }}
-          >
+          <h1 className="fade-up fade-up-delay-1 serif mt-3 max-w-3xl text-4xl font-semibold leading-[1.04] sm:text-5xl lg:text-[60px]" style={{ color: "var(--torres-ink)" }}>
             Bem-vindo ao{" "}
             <span style={{ color: "var(--torres-indigo)" }} className="italic">
               Alameda 500
             </span>
             . Explore do seu jeito.
           </h1>
-          <p
-            className="fade-up fade-up-delay-2 mt-5 max-w-2xl text-base sm:text-lg"
-            style={{ color: "var(--torres-muted)" }}
-          >
-            Uma jornada interativa para você conhecer cada detalhe, descobrir
-            qual casa combina com você e só falar com um corretor quando estiver
-            pronto. Sem pressão, no seu ritmo.
+          <p className="fade-up fade-up-delay-2 mt-5 max-w-2xl text-base sm:text-lg" style={{ color: "var(--torres-muted)" }}>
+            Uma jornada interativa pra você conhecer cada detalhe, descobrir
+            qual casa combina com você e só falar com um corretor quando
+            estiver pronto. Sem pressão, no seu ritmo.
           </p>
 
-          {/* Status pills */}
           <div className="fade-up fade-up-delay-3 mt-8 flex flex-wrap items-center gap-2">
             {modulos_visitados.length > 0 && (
               <span
-                className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--torres-indigo)]/30 bg-white px-3 py-1.5 text-[11px] font-semibold"
-                style={{ color: "var(--torres-indigo)" }}
+                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold"
+                style={{ borderColor: "#a7f3d0", backgroundColor: "#ecfdf5", color: "#047857" }}
               >
                 <Check className="h-3 w-3" />
-                {modulos_visitados.length} módulo
-                {modulos_visitados.length > 1 ? "s" : ""} explorado
-                {modulos_visitados.length > 1 ? "s" : ""}
+                {modulos_visitados.length} módulo{modulos_visitados.length > 1 ? "s" : ""} concluído{modulos_visitados.length > 1 ? "s" : ""}
               </span>
             )}
             {casa_preferida && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--torres-indigo)]/30 bg-white px-3 py-1.5 text-[11px] font-semibold" style={{ color: "var(--torres-indigo)" }}>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-700">
                 <Home className="h-3 w-3" />
                 Casa escolhida
               </span>
             )}
             {classification && (
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold capitalize"
-                style={{
-                  borderColor: "rgba(100,113,162,0.35)",
-                  backgroundColor: "rgba(100,113,162,0.08)",
-                  color: "var(--torres-indigo-deep)",
-                }}
-              >
+              <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold capitalize" style={{ borderColor: "rgba(100,113,162,0.35)", backgroundColor: "rgba(100,113,162,0.08)", color: "var(--torres-indigo-deep)" }}>
                 <UserRound className="h-3 w-3" />
                 Perfil {classification}
+              </span>
+            )}
+            {simulacao?.aprovado === true && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-700">
+                <TrendingUp className="h-3 w-3" />
+                Pré-qualificado
               </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* Grid de módulos */}
+      {/* Módulos */}
       <div className="mx-auto max-w-[1320px] px-6 py-12 sm:px-10 lg:px-16 lg:py-16">
         <div className="mb-8 flex items-end justify-between">
           <div>
-            <div
-              className="text-[11px] uppercase tracking-[0.22em]"
-              style={{ color: "var(--torres-muted)" }}
-            >
+            <div className="text-[11px] uppercase tracking-[0.22em]" style={{ color: "var(--torres-muted)" }}>
               Sua jornada
             </div>
-            <h2
-              className="serif mt-2 text-2xl font-semibold sm:text-3xl"
-              style={{ color: "var(--torres-ink)" }}
-            >
+            <h2 className="serif mt-2 text-2xl font-semibold sm:text-3xl" style={{ color: "var(--torres-ink)" }}>
               Por onde quer começar?
             </h2>
           </div>
           {!corretorHabilitado && (
-            <div
-              className="hidden rounded-full border border-[color:var(--torres-line)] bg-white px-3 py-1.5 text-[11px] sm:block"
-              style={{ color: "var(--torres-muted)" }}
-            >
+            <div className="hidden rounded-full border border-[color:var(--torres-line)] bg-white px-3 py-1.5 text-[11px] sm:block" style={{ color: "var(--torres-muted)" }}>
               Explore 2 módulos pra liberar "Falar com corretor"
             </div>
           )}
         </div>
 
-        <div
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-          data-testid="hub-grid"
-        >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="hub-grid">
           {MODULOS.map((m, idx) => {
             const Icon = ICON_MAP[m.icon] || Home;
             const visitado = modulos_visitados.includes(m.id);
             const bloqueado = m.isFinal && !corretorHabilitado;
-            const isSimulador = m.id === "simulador";
             return (
               <button
                 key={m.id}
@@ -160,33 +130,31 @@ export default function Hub() {
                 className={`group relative flex flex-col items-start overflow-hidden rounded-2xl border bg-white p-6 text-left transition-all duration-300 fade-up ${
                   bloqueado
                     ? "cursor-not-allowed opacity-60"
-                    : "hover:-translate-y-1 hover:border-[color:var(--torres-indigo)] hover:shadow-[0_20px_40px_-20px_rgba(100,113,162,0.4)]"
-                } ${visitado ? "border-[color:var(--torres-indigo)]/40" : "border-[color:var(--torres-line)]"}`}
+                    : "hover:-translate-y-1 hover:shadow-[0_20px_40px_-20px_rgba(100,113,162,0.4)]"
+                } ${
+                  visitado
+                    ? "border-emerald-300 shadow-[0_0_0_1px_#a7f3d0_inset]"
+                    : "border-[color:var(--torres-line)] hover:border-[color:var(--torres-indigo)]"
+                }`}
                 style={{ animationDelay: `${idx * 70}ms` }}
               >
-                {/* Top row */}
                 <div className="flex w-full items-start justify-between">
                   <div
                     className="flex h-11 w-11 items-center justify-center rounded-xl transition-transform group-hover:scale-110"
                     style={{
-                      backgroundColor: "rgba(100,113,162,0.08)",
-                      color: "var(--torres-indigo)",
+                      backgroundColor: visitado ? "#d1fae5" : "rgba(100,113,162,0.08)",
+                      color: visitado ? "#047857" : "var(--torres-indigo)",
                     }}
                   >
                     <Icon className="h-5 w-5" />
                   </div>
                   {visitado && (
                     <span
-                      className="inline-flex items-center gap-1 rounded-full bg-[color:var(--torres-indigo)]/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider"
-                      style={{ color: "var(--torres-indigo)" }}
+                      data-testid={`hub-module-${m.id}-concluido`}
+                      className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700"
                     >
                       <Check className="h-3 w-3" />
-                      Visitado
-                    </span>
-                  )}
-                  {isSimulador && m.badge && (
-                    <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
-                      {m.badge}
+                      Concluído
                     </span>
                   )}
                   {bloqueado && (
@@ -197,22 +165,17 @@ export default function Hub() {
                   )}
                 </div>
 
-                {/* Title + description */}
-                <h3
-                  className="serif mt-5 text-xl font-semibold leading-snug"
-                  style={{ color: "var(--torres-ink)" }}
-                >
+                <h3 className="serif mt-5 text-xl font-semibold leading-snug" style={{ color: "var(--torres-ink)" }}>
                   {m.titulo}
                 </h3>
-                <p
-                  className="mt-2 text-sm"
-                  style={{ color: "var(--torres-muted)" }}
-                >
+                <p className="mt-2 text-sm" style={{ color: "var(--torres-muted)" }}>
                   {m.descricao}
                 </p>
 
-                {/* CTA row */}
-                <div className="mt-5 flex items-center gap-1.5 text-xs font-semibold" style={{ color: "var(--torres-indigo)" }}>
+                <div
+                  className="mt-5 flex items-center gap-1.5 text-xs font-semibold"
+                  style={{ color: visitado ? "#047857" : "var(--torres-indigo)" }}
+                >
                   {m.isFinal ? "Escolher tipo de atendimento" : visitado ? "Revisitar" : "Começar"}
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                 </div>
@@ -221,9 +184,44 @@ export default function Hub() {
           })}
         </div>
 
-        {/* Score hint */}
+        {/* Insights (aparecem quando o usuário já respondeu parte do quiz) */}
+        {insights.length > 0 && (
+          <div
+            className="mt-10 rounded-3xl border border-[color:var(--torres-indigo)]/20 bg-gradient-to-br from-[color:var(--torres-indigo)]/5 to-white p-6 sm:p-8"
+            data-testid="hub-insights"
+          >
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.22em]" style={{ color: "var(--torres-indigo)" }}>
+              <Sparkles className="h-3 w-3" />
+              Insights sobre seu perfil
+            </div>
+            <h3 className="serif mt-2 text-xl font-semibold" style={{ color: "var(--torres-ink)" }}>
+              O que já sabemos sobre você
+            </h3>
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {insights.map((ins, idx) => (
+                <div
+                  key={idx}
+                  data-testid={`hub-insight-${idx}`}
+                  className="flex items-start gap-3 rounded-2xl border border-[color:var(--torres-line)] bg-white p-4"
+                >
+                  <div className="text-2xl">{ins.icon}</div>
+                  <div>
+                    <div className="serif text-sm font-semibold" style={{ color: "var(--torres-ink)" }}>
+                      {ins.titulo}
+                    </div>
+                    <div className="text-xs" style={{ color: "var(--torres-muted)" }}>
+                      {ins.descricao}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Score bar */}
         <div
-          className="mt-10 flex flex-col gap-2 rounded-2xl border border-[color:var(--torres-line)] bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+          className="mt-8 flex flex-col gap-2 rounded-2xl border border-[color:var(--torres-line)] bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
           data-testid="hub-score-hint"
         >
           <div>
@@ -232,10 +230,7 @@ export default function Hub() {
             </div>
             <div className="serif mt-1 text-2xl font-semibold" style={{ color: "var(--torres-ink)" }}>
               {leadScore}{" "}
-              <span
-                className="text-sm font-medium capitalize"
-                style={{ color: "var(--torres-muted)" }}
-              >
+              <span className="text-sm font-medium capitalize" style={{ color: "var(--torres-muted)" }}>
                 / 150 • Lead {temperatura}
               </span>
             </div>
