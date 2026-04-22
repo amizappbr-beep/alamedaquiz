@@ -93,7 +93,12 @@ export function JourneyProvider({ children }) {
     leadScore >= 90 ? "quente" : leadScore >= 45 ? "morno" : "frio";
 
   // Actions
-  const goTo = (stage) => setState((s) => ({ ...s, stage }));
+  const goTo = (stage) => {
+    setState((s) => ({ ...s, stage }));
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   const markModuloVisitado = (moduloId) =>
     setState((s) => ({

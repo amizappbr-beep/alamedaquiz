@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { useJourney } from "../../context/JourneyContext";
 import { UNIDADES, PRECO_MODELO, formatBRL, resumoDisponibilidade } from "../../lib/tabelaVendas";
+import { simularProposta } from "../../lib/simulador";
 import { CASA_MODELOS } from "../../lib/conteudo";
 import {
   Calculator,
@@ -11,6 +12,8 @@ import {
   TrendingUp,
   Home,
   Percent,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -75,6 +78,27 @@ export default function ModuloSimulador() {
 
   const podeSimular =
     unidadeNumero && parseNum(renda) > 0 && parseNum(entrada) + parseNum(fgts) > 0;
+
+  // Espelho dinâmico — recalcula conforme o usuário preenche
+  const previa = useMemo(() => {
+    if (!unidadeSel) return null;
+    const rendaN = parseNum(renda);
+    if (rendaN <= 0) return null;
+    try {
+      return simularProposta({
+        valorImovel: unidadeSel.preco,
+        rendaBrutaFamiliar: rendaN,
+        entradaPropria: parseNum(entrada),
+        fgts: parseNum(fgts),
+        prazoFinanciamentoMeses: prazo,
+        parcelasSinal,
+        usarResidualPosChaves: residual,
+      });
+    } catch {
+      return null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unidadeSel?.preco, renda, entrada, fgts, prazo, parcelasSinal, residual]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -318,12 +342,40 @@ export default function ModuloSimulador() {
             </button>
           </div>
 
-          {/* Right: preview card */}
+          {/* Right: espelho dinâmico da proposta */}
           <aside>
-            <div className="sticky top-20 rounded-3xl border border-[color:var(--torres-line)] bg-white p-6">
-              <div className="text-[11px] uppercase tracking-[0.22em]" style={{ color: "var(--torres-muted)" }}>
-                Resumo da compra
+            <div
+              className="sticky top-20 rounded-3xl border border-[color:var(--torres-line)] bg-white p-6"
+              data-testid="simulador-espelho"
+            >
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] uppercase tracking-[0.22em]" style={{ color: "var(--torres-muted)" }}>
+                  Espelho da proposta
+                </div>
+                {previa && (
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      previa.aprovadoGeral
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-amber-100 text-amber-800"
+                    }`}
+                    data-testid="simulador-espelho-status"
+                  >
+                    {previa.aprovadoGeral ? (
+                      <>
+                        <CheckCircle2 className="h-3 w-3" />
+                        Apto
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle className="h-3 w-3" />
+                        Ajustar
+                      </>
+                    )}
+                  </span>
+                )}
               </div>
+
               {unidadeSel ? (
                 <>
                   <div className="serif mt-2 text-2xl font-semibold" style={{ color: "var(--torres-ink)" }}>
@@ -334,10 +386,49 @@ export default function ModuloSimulador() {
                     {modeloDaUnidade?.lavabo ? " + lavabo" : ""}
                   </div>
                   <div className="my-5 border-t border-[color:var(--torres-line)]"></div>
+
                   <Row icon={<TrendingUp className="h-3.5 w-3.5" />} label="Valor do imóvel" value={formatBRL(unidadeSel.preco)} />
-                  <Row icon={<Percent className="h-3.5 w-3.5" />} label="Sinal (13%)" value={formatBRL(unidadeSel.preco * 0.13)} />
-                  <Row icon={<Percent className="h-3.5 w-3.5" />} label="Pago até chaves (20%)" value={formatBRL(unidadeSel.preco * 0.2)} />
-                  <Row icon={<Percent className="h-3.5 w-3.5" />} label="Financiado banco (80%)" value={formatBRL(unidadeSel.preco * 0.8)} />
+                  <Row icon={<Percent className="h-3.5 w-3.5" />} label={`Sinal (13%) em ${parcelasSinal}x`} value={previa ? `${parcelasSinal}x ${formatBRL(previa.parcelaSinal)}` : formatBRL(unidadeSel.preco * 0.13)} />
+                  <Row icon={<Percent className="h-3.5 w-3.5" />} label="Complemento até chaves" value={previa ? `${previa.mesesComplemento}x ${formatBRL(previa.parcelaComplemento)}` : formatBRL(unidadeSel.preco * 0.07)} />
+                  <Row
+                    icon={<Percent className="h-3.5 w-3.5" />}
+                    label={`Financiamento (${prazo / 12} anos)`}
+                    value={previa ? `${prazo}x ${formatBRL(previa.parcelaBancaria)}` : formatBRL(unidadeSel.preco * 0.8)}
+                    destaque
+                  />
+                  {previa && residual && (
+                    <Row
+                      icon={<Percent className="h-3.5 w-3.5" />}
+                      label="Residual pós-chaves"
+                      value={`20x ${formatBRL(previa.parcelaResidual)}`}
+                    />
+                  )}
+
+                  {previa && (
+                    <>
+                      <div className="my-4 border-t border-[color:var(--torres-line)]"></div>
+                      <Row
+                        icon={<TrendingUp className="h-3.5 w-3.5" />}
+                        label={`Faixa: ${previa.faixa.nome}`}
+                        value={`${(previa.taxaAA * 100).toFixed(2)}% a.a.`}
+                      />
+                      <Row
+                        icon={<Home className="h-3.5 w-3.5" />}
+                        label="Limite (30% da renda)"
+                        value={formatBRL(previa.limiteComprometimento)}
+                      />
+                      {!previa.aprovadoCapacidade && (
+                        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-800" data-testid="simulador-alerta-parcela">
+                          ⚠ Parcela {formatBRL(previa.parcelaBancaria)} passa do limite ({formatBRL(previa.limiteComprometimento)}). Tente prazo maior ou entrada maior.
+                        </div>
+                      )}
+                      {!previa.cobreAteChaves && (
+                        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-800" data-testid="simulador-alerta-entrada">
+                          ⚠ Recursos próprios precisam cobrir ~{formatBRL(previa.ateChavesTotal)} até as chaves.
+                        </div>
+                      )}
+                    </>
+                  )}
                 </>
               ) : (
                 <div className="mt-3 text-sm" style={{ color: "var(--torres-muted)" }}>
@@ -346,7 +437,7 @@ export default function ModuloSimulador() {
               )}
               <div className="mt-6 flex items-start gap-2 rounded-xl bg-[color:var(--torres-indigo)]/5 p-3 text-xs" style={{ color: "var(--torres-indigo-deep)" }}>
                 <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                Simulação aproximada. Valores oficiais são confirmados pelo banco após análise de crédito.
+                Simulação aproximada. Valores oficiais são confirmados pelo banco após análise.
               </div>
             </div>
           </aside>
@@ -367,14 +458,14 @@ function Field({ label, children }) {
   );
 }
 
-function Row({ icon, label, value }) {
+function Row({ icon, label, value, destaque }) {
   return (
-    <div className="flex items-center justify-between py-1.5 text-sm">
+    <div className={`flex items-center justify-between py-1.5 text-sm ${destaque ? "rounded-lg bg-[color:var(--torres-indigo)]/5 px-3 -mx-1 my-1" : ""}`}>
       <span className="inline-flex items-center gap-1.5" style={{ color: "var(--torres-muted)" }}>
         {icon}
         {label}
       </span>
-      <span className="serif font-semibold" style={{ color: "var(--torres-ink)" }}>
+      <span className="serif font-semibold text-right" style={{ color: destaque ? "var(--torres-indigo-deep)" : "var(--torres-ink)" }}>
         {value}
       </span>
     </div>
