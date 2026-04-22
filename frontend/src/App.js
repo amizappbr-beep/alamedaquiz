@@ -16,6 +16,7 @@ import ModuloImediato from "./components/modules/ModuloImediato";
 import ModuloObrigado from "./components/modules/ModuloObrigado";
 import ModuloLocalizacao from "./components/modules/ModuloLocalizacao";
 import Gate from "./components/Gate";
+import AdminApp from "./admin/AdminApp";
 
 // Robust scroll-to-top for every stage transition.
 // Handles mobile quirks: iOS Safari rubber-band, Android Chrome URL bar,
@@ -84,6 +85,14 @@ function Router() {
 }
 
 export default function App() {
+  // Admin route — bypasses the public journey entirely
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
+    return (
+      <div className="App" data-testid="app-root-admin">
+        <AdminApp />
+      </div>
+    );
+  }
   return (
     <div className="App" data-testid="app-root">
       <JourneyProvider>

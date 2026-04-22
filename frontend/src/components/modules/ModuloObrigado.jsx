@@ -3,6 +3,7 @@ import { useJourney } from "../../context/JourneyContext";
 import { CASA_MODELOS } from "../../lib/conteudo";
 import { CheckCircle2, Calendar, Zap, RotateCcw, ArrowRight } from "lucide-react";
 import { buildWhatsappUrl } from "../../lib/quizData";
+import CertificadoExploracao from "../CertificadoExploracao";
 
 export default function ModuloObrigado() {
   const {
@@ -110,6 +111,15 @@ export default function ModuloObrigado() {
             </div>
           )}
         </div>
+
+        {/* Certificate of Exploration — shareable keepsake */}
+        <CertificadoExploracao
+          name={name}
+          modulosCount={modulos_visitados.length}
+          temperatura={temperatura}
+          casaId={casa_preferida}
+          leadScore={leadScore}
+        />
 
         {/* Actions */}
         <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">

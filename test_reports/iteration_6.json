@@ -1,0 +1,46 @@
+{
+  "summary": "Fase 3 — CRM Admin (JWT) + Certificado: testei backend (26 pytest, 25 passaram) e frontend (admin login/logout, persistência, kanban dropdown, drawer, filtros, mobile + certificado em /obrigado). Auth, CRUD de leads, filtros, métricas, seed idempotente e rotas públicas todos OK. Encontrei 2 bugs importantes: (1) brute-force lockout NÃO funciona em produção porque o request.client.host vem do proxy do ingress (IPs 10.81.1.133 / 10.81.2.5 alternando) e o identifier 'ip:email' fica dividido entre várias chaves — sempre retorna 401, nunca chega a 429; (2) CertificadoExploracao falha no download/compartilhamento porque a imagem de fundo (customer-assets.emergentagent.com) é servida sem CORS headers → html2canvas gera canvas tainted e a Promise rejeita antes de qualquer rerender, então o botão nem mostra 'Gerando imagem...' e nenhum arquivo é baixado.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/admin/login (brute-force)", "issue": "Lockout após 5 tentativas NÃO dispara em produção. O identifier usa request.client.host, que na frente do ingress do Kubernetes alterna entre IPs de proxy (ex.: 10.81.1.133 e 10.81.2.5), então cada chave de login_attempts fica com count<5. 6ª tentativa ainda devolve 401 (deveria 429). Verificado com curl e via coleção login_attempts. Correção: ler X-Forwarded-For (primeiro IP) ou usar apenas email no identifier (ou ambos).", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/admin/login", "issue": "CORS middleware tem allow_credentials=True com allow_origins=['*']; funciona por usarmos Bearer header, mas navegadores bloqueariam cookies. Se futuramente usar cookies, trocar para origins explícitas."},
+      {"endpoint": "PATCH /api/admin/leads/{id}/status", "issue": "status_history.from é sempre None — não lê o valor anterior. Funcional mas perde informação de transição."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "CertificadoExploracao", "issue": "html2canvas falha por CORS (background-image de customer-assets.emergentagent.com sem Access-Control-Allow-Origin). Canvas tainted → toDataURL lança SecurityError → download nunca acontece. Além disso, botão não chega a mostrar 'Gerando imagem...' porque setState(true) + erro quase-imediato são batched em um só render. Solução sugerida: (a) hospedar a imagem no mesmo domínio (/public ou REACT_APP_BACKEND_URL) OU configurar CORS no bucket; (b) usar <img crossOrigin='anonymous'> (já que useCORS=true está setado mas o servidor não devolve o header); (c) adicionar catch com toast de erro e fallback.", "selector": "[data-testid=\"certificado-download-btn\"]", "priority": "HIGH"},
+      {"component": "CertificadoExploracao (Stat Engajamento)", "issue": "Mostra 'NaN/150' quando o leadScore é computed memo e o seed não tem todos os campos. Proteger com Number(leadScore) || 0 antes de exibir; hoje o console mostra warning 'Received NaN for the attribute children'.", "selector": "[data-testid=\"certificado-card\"]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_admin_fase3.py",
+    "/app/test_reports/pytest/admin_fase3.xml"
+  ],
+  "action_items": [
+    "BACKEND (HIGH): Corrigir brute-force. Em auth/routers/admin.py, trocar client_ip para ler X-Forwarded-For: `xff = request.headers.get('x-forwarded-for','').split(',')[0].strip() or (request.client.host if request.client else 'unknown')`, ou simplificar o identifier para `email` apenas (single-admin, sem risco de DoS cruzado).",
+    "FRONTEND (HIGH): Consertar download do Certificado. A background-image do card (customer-assets.emergentagent.com/...FACHADA...png) está bloqueando html2canvas. Mover para asset local (/public/certificado-bg.png) ou adicionar o header CORS no bucket. Opcionalmente, adicionar try/catch com toast e fallback quando html2canvas falha.",
+    "FRONTEND (MED): No CertificadoExploracao, proteger leadScore contra NaN (`Number.isFinite(leadScore) ? leadScore : 0`) para não mostrar 'NaN/150'.",
+    "BACKEND (LOW): PATCH status poderia fazer um read-before-update para popular status_history.from com o valor anterior."
+  ],
+  "critical_code_review_comments": [
+    "auth.py: identifier depende de request.client.host — em ambiente atrás de proxy (K8s ingress/LB) isso é o IP do proxy, não do cliente. Use X-Forwarded-For / X-Real-IP.",
+    "server.py: o fluxo de serializar datetimes manualmente para ISO repete-se em várias rotas — extrair helper em um utils.",
+    "CertificadoExploracao.jsx: depende de html2canvas com imagem externa; useCORS:true só funciona se o servidor devolver o header, o que não está acontecendo."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_admin_fase3.py (novo — 26 testes pytest)"
+  ],
+  "success_rate": {"backend": "96% (25/26 pytest, 1 falha de brute-force legítima)", "frontend": "90% (admin 100%, certificado falha no download)"},
+  "test_credentials": "Admin: admin@alameda500.com / vILabMQvT59VB-8NW7IclIu4 — funcionando. Token em localStorage key 'alameda500_admin_token_v1'. Validado via /api/admin/me.",
+  "seed_data_creation": "Criados leads via POST /api/leads com prefixo 'TEST_' (TEST_Regressao_Fase3_<uuid>, TEST_public_lead). Base já tinha ~60 leads de iterações anteriores usados pelo Kanban.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "main_agent_can_self_test": false,
+  "context_for_next_testing_agent": "Arquivo de teste backend reutilizável em /app/backend/tests/test_admin_fase3.py (26 casos). Os 2 bugs precisam de fix no código principal — testing agent apenas documentou. Depois do fix de brute-force, o teste test_brute_force_lockout deve passar sem alterações (usa email único). Para validar o fix do certificado, testar o download real no navigator e conferir se a imagem é baixada; ou usar Playwright para capturar o evento de download (page.expect_download()).",
+  "rca of the issue": "BRUTE-FORCE: K8s ingress termina TLS e repassa ao backend via pods de proxy (10.81.1.133 e 10.81.2.5 observados alternando). request.client.host em FastAPI é o peer direto do socket = proxy. O identifier f'{ip}:{email}' vira 2+ chaves distintas, então count nunca chega a 5. Fix: usar header 'x-forwarded-for' (primeiro token). CERTIFICADO: html2canvas tenta copiar o background-image CSS via canvas; o recurso externo não tem 'Access-Control-Allow-Origin: *'; o canvas é marcado como tainted; toDataURL lança SecurityError; a Promise rejeita; o botão volta do estado loading antes de pintar. Fix: hospedar asset mesmo-origem ou habilitar CORS no bucket."
+}

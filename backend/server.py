@@ -34,7 +34,7 @@ class Agendamento(BaseModel):
     model_config = ConfigDict(extra="ignore")
     data: str
     horario: str
-    formato: Literal["decorado", "imovel", "videochamada"]
+    formato: Literal["decorado", "imovel", "videochamada"]  # "decorado" kept for legacy compat
     observacao: Optional[str] = None
 
 
@@ -95,6 +95,9 @@ class Lead(BaseModel):
     lead_score: int = 0
     temperatura: str = "frio"
     origem: Optional[str] = None
+    status: str = "novo"  # Kanban: novo|contatado|agendado|negociacao|ganho|perdido
+    admin_notes: List[Dict[str, Any]] = Field(default_factory=list)
+    status_history: List[Dict[str, Any]] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -413,6 +416,15 @@ async def leads_summary():
 
 app.include_router(api_router)
 
+# ---- Admin routes (protected by JWT) ----
+from routers.admin import router as admin_router  # noqa: E402
+api_router_admin = APIRouter(prefix="/api")
+api_router_admin.include_router(admin_router)
+app.include_router(api_router_admin)
+
+# Expose db to admin routes via app.state
+app.state.db = db
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -426,6 +438,22 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+@app.on_event("startup")
+async def _on_startup():
+    """Seed admin user and create MongoDB indexes (idempotent)."""
+    from auth import seed_admin
+    try:
+        await seed_admin(db)
+        await db.admin_users.create_index("email", unique=True)
+        await db.login_attempts.create_index("identifier")
+        await db.leads.create_index([("created_at", -1)])
+        await db.leads.create_index("status")
+        await db.leads.create_index("temperatura")
+        logger.info("Admin seeded + indexes ensured.")
+    except Exception as exc:
+        logger.exception("Startup init failed: %s", exc)
 
 
 @app.on_event("shutdown")
