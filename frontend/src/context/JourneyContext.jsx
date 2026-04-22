@@ -95,9 +95,7 @@ export function JourneyProvider({ children }) {
   // Actions
   const goTo = (stage) => {
     setState((s) => ({ ...s, stage }));
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    // Scroll reset is handled centrally by App.js via useLayoutEffect on stage change
   };
 
   const markModuloVisitado = (moduloId) =>
@@ -149,9 +147,7 @@ export function JourneyProvider({ children }) {
 
   const setRegistered = (val) => {
     setState((s) => ({ ...s, registered: val }));
-    if (val && typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    // Scroll reset is handled centrally by App.js via useLayoutEffect
   };
   const setOpportunityOptIn = (val) => setState((s) => ({ ...s, opportunityOptIn: val }));
 

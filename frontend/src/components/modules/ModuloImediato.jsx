@@ -88,7 +88,6 @@ export default function ModuloImediato() {
       });
       window.open(wa, "_blank", "noopener");
       goTo("obrigado");
-      window.scrollTo({ top: 0 });
     } catch (err) {
       console.error(err);
       toast.error("Não conseguimos registrar seu contato. Tente novamente.");

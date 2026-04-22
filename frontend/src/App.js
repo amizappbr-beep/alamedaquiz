@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useLayoutEffect } from "react";
 import "@/App.css";
 import { Toaster } from "sonner";
 import { JourneyProvider, useJourney } from "./context/JourneyContext";
@@ -17,8 +17,42 @@ import ModuloObrigado from "./components/modules/ModuloObrigado";
 import ModuloLocalizacao from "./components/modules/ModuloLocalizacao";
 import Gate from "./components/Gate";
 
+// Robust scroll-to-top for every stage transition.
+// Handles mobile quirks: iOS Safari rubber-band, Android Chrome URL bar,
+// and apps where scroll container is <html>, <body>, or nested containers.
+function useScrollTopOnStageChange(stage, registered) {
+  useLayoutEffect(() => {
+    const reset = () => {
+      try {
+        // Instant (not smooth) — smooth breaks on iOS when the DOM changes.
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      } catch (_) {
+        window.scrollTo(0, 0);
+      }
+      if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+    };
+    // Fire synchronously before paint, then again after paint for iOS Safari,
+    // and once more on next tick to catch late layout shifts (image loading etc).
+    reset();
+    const raf1 = requestAnimationFrame(() => {
+      reset();
+      const raf2 = requestAnimationFrame(reset);
+      // store raf2 on raf1 for cleanup
+      // eslint-disable-next-line no-param-reassign
+      reset._raf2 = raf2;
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      if (reset._raf2) cancelAnimationFrame(reset._raf2);
+    };
+  }, [stage, registered]);
+}
+
 function Router() {
   const { stage, registered } = useJourney();
+  useScrollTopOnStageChange(stage, registered);
   if (!registered) return <Gate />;
   switch (stage) {
     case "empreendimento":

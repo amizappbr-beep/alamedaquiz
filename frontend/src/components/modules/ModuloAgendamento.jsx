@@ -114,7 +114,6 @@ export default function ModuloAgendamento() {
         tempo_total_segundos: tempoTotalSegundos,
       });
       goTo("obrigado");
-      window.scrollTo({ top: 0 });
     } catch (err) {
       console.error(err);
       toast.error("Não conseguimos registrar seu agendamento. Tente novamente.");
