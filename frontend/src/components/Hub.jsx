@@ -282,6 +282,18 @@ export default function Hub() {
             Quanto mais você explora, melhor conseguimos te atender.
           </div>
         </div>
+
+        {/* Atalho discreto para o painel CRM da Torres (área restrita) */}
+        <div className="mt-10 flex justify-center">
+          <a
+            href="/painel.html"
+            data-testid="hub-painel-link"
+            className="text-[11px] uppercase tracking-[0.22em] underline-offset-4 transition-colors hover:underline"
+            style={{ color: "var(--torres-muted)" }}
+          >
+            Área restrita · Torres Engenharia
+          </a>
+        </div>
       </div>
     </section>
   );

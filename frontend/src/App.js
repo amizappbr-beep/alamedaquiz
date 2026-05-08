@@ -85,13 +85,24 @@ function Router() {
 }
 
 export default function App() {
-  // Admin route — bypasses the public journey entirely
-  if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
-    return (
-      <div className="App" data-testid="app-root-admin">
-        <AdminApp />
-      </div>
-    );
+  // Admin/CRM route — bypasses the public journey entirely.
+  // Multiple aliases so it works even if a browser extension blocks the
+  // word "admin" in URLs (uBlock, Adblock, corporate proxies, etc).
+  if (typeof window !== "undefined") {
+    const path = window.location.pathname;
+    const isAdmin =
+      path.startsWith("/admin") ||
+      path.startsWith("/crm") ||
+      path.startsWith("/torres-admin") ||
+      path.startsWith("/torres-crm") ||
+      path.startsWith("/painel");
+    if (isAdmin) {
+      return (
+        <div className="App" data-testid="app-root-admin">
+          <AdminApp />
+        </div>
+      );
+    }
   }
   return (
     <div className="App" data-testid="app-root">
