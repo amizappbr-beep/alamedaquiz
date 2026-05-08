@@ -5,14 +5,9 @@ import { X, ArrowRight, ChevronLeft, ChevronRight, Check as CheckIcon } from "lu
 import ModuleFooterCTA from "../ModuleFooterCTA";
 
 export default function ModuloEmpreendimento() {
-  const { markModuloVisitado, goTo, addInteracao, imagens_vistas, markImagemVista } = useJourney();
+  const { goTo, addInteracao, imagens_vistas, markImagemVista } = useJourney();
   const [lightboxIdx, setLightboxIdx] = useState(null);
   const [masterOpen, setMasterOpen] = useState(false);
-
-  useEffect(() => {
-    markModuloVisitado("empreendimento");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const openImage = (item, idx) => {
     addInteracao("imagem_aberta", { titulo: item.title, index: idx });

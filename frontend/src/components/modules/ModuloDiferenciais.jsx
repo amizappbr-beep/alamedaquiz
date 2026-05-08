@@ -4,12 +4,7 @@ import { DIFERENCIAIS } from "../../lib/conteudo";
 import * as LucideIcons from "lucide-react";
 
 export default function ModuloDiferenciais() {
-  const { markModuloVisitado, goTo } = useJourney();
-
-  useEffect(() => {
-    markModuloVisitado("diferenciais");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { goTo } = useJourney();
 
   return (
     <section

@@ -5,15 +5,10 @@ import { PRECO_MODELO, UNIDADES, formatBRL } from "../../lib/tabelaVendas";
 import { Check, Sparkles, Ruler, Square, Bed, X } from "lucide-react";
 
 export default function ModuloCasas() {
-  const { markModuloVisitado, goTo, setCasaPreferida, casa_preferida, quiz_answers } =
+  const { goTo, setCasaPreferida, casa_preferida, quiz_answers } =
     useJourney();
   const sugestao = sugerirCasa(quiz_answers);
   const [plantaOpen, setPlantaOpen] = useState(null);
-
-  useEffect(() => {
-    markModuloVisitado("casas");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <section

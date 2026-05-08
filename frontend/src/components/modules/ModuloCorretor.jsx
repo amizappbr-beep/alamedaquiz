@@ -1,14 +1,9 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useJourney } from "../../context/JourneyContext";
 import { Zap, Calendar, ArrowRight } from "lucide-react";
 
 export default function ModuloCorretor() {
-  const { markModuloVisitado, goTo, leadScore, temperatura } = useJourney();
-
-  useEffect(() => {
-    markModuloVisitado("corretor");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { goTo, leadScore, temperatura } = useJourney();
 
   return (
     <section

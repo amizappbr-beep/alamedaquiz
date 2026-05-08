@@ -9,15 +9,10 @@ import {
 import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
 
 export default function ModuloPerfil() {
-  const { markModuloVisitado, goTo, setQuizAnswer, quiz_answers, classification } =
+  const { goTo, setQuizAnswer, quiz_answers, classification } =
     useJourney();
   const [current, setCurrent] = useState(0); // index global 0..11
   const [showInsight, setShowInsight] = useState(false); // true após bloco 1
-
-  useEffect(() => {
-    markModuloVisitado("perfil");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const bloco1 = getQuestionsByBloco(1);
   const totalQ = QUIZ_QUESTIONS.length;

@@ -32,7 +32,6 @@ function formatBRLInput(value) {
 
 export default function ModuloSimulador() {
   const {
-    markModuloVisitado,
     goTo,
     setSimulacao,
     quiz_answers,
@@ -51,7 +50,6 @@ export default function ModuloSimulador() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    markModuloVisitado("simulador");
     // pré-selecionar primeira unidade disponível do modelo preferido
     if (!unidadeNumero && casa_preferida) {
       const u = UNIDADES.find((x) => x.modelo === casa_preferida && x.status === "disponivel");

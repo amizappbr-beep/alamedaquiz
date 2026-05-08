@@ -4,12 +4,7 @@ import { ENDERECO } from "../../lib/assets";
 import { MapPin, Navigation, ExternalLink, Map as MapIcon } from "lucide-react";
 
 export default function ModuloLocalizacao() {
-  const { markModuloVisitado, goTo } = useJourney();
-
-  useEffect(() => {
-    markModuloVisitado("localizacao");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { goTo } = useJourney();
 
   return (
     <section

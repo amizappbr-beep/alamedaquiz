@@ -99,16 +99,18 @@ export function JourneyProvider({ children }) {
   };
 
   const markModuloVisitado = (moduloId) =>
-    setState((s) => ({
-      ...s,
-      modulos_visitados: s.modulos_visitados.includes(moduloId)
-        ? s.modulos_visitados
-        : [...s.modulos_visitados, moduloId],
-      interacoes: [
-        ...s.interacoes,
-        { tipo: "modulo_visitado", modulo: moduloId, timestamp: new Date().toISOString() },
-      ],
-    }));
+    setState((s) => {
+      // Idempotent in BOTH arrays — prevents render loops if called twice.
+      if (s.modulos_visitados.includes(moduloId)) return s;
+      return {
+        ...s,
+        modulos_visitados: [...s.modulos_visitados, moduloId],
+        interacoes: [
+          ...s.interacoes,
+          { tipo: "modulo_visitado", modulo: moduloId, timestamp: new Date().toISOString() },
+        ],
+      };
+    });
 
   const setQuizAnswer = (questionId, option) =>
     setState((s) => ({
