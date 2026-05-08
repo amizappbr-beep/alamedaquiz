@@ -112,7 +112,14 @@ function Router() {
     // Capa e fluxos de saída sem o chrome do Book
     return content;
   }
-  return <BookLayout>{content}</BookLayout>;
+  // Quiz e Simulador têm fluxo interno próprio (perguntas/forms passo-a-passo).
+  // Mantemos o BookHeader (trilha + botão Corretor) mas escondemos o
+  // BookFooter pra evitar dois conjuntos de botões "Anterior/Próximo"
+  // competindo na mesma tela.
+  const noFooterStages = new Set(["perfil", "simulador"]);
+  return (
+    <BookLayout hideFooter={noFooterStages.has(stage)}>{content}</BookLayout>
+  );
 }
 
 export default function App() {

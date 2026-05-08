@@ -36,6 +36,7 @@ export default function ModuloSimulador() {
     setSimulacao,
     quiz_answers,
     casa_preferida,
+    markModuloVisitado,
   } = useJourney();
 
   const [unidadeNumero, setUnidadeNumero] = useState(null);
@@ -137,6 +138,7 @@ export default function ModuloSimulador() {
         aprovado: data.aprovado,
         _raw: data,
       });
+      markModuloVisitado("simulador");
       goTo("resultado_simulacao");
     } catch (err) {
       console.error(err);

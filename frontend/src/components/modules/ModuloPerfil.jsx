@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useJourney } from "../../context/JourneyContext";
 import {
   QUIZ_QUESTIONS,
@@ -6,10 +6,11 @@ import {
   gerarInsights,
   getQuestionsByBloco,
 } from "../../lib/quizData";
+import { getPrevStage } from "../../lib/bookPages";
 import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
 
 export default function ModuloPerfil() {
-  const { goTo, setQuizAnswer, quiz_answers, classification } =
+  const { goTo, setQuizAnswer, quiz_answers, markModuloVisitado } =
     useJourney();
   const [current, setCurrent] = useState(0); // index global 0..11
   const [showInsight, setShowInsight] = useState(false); // true após bloco 1
@@ -38,6 +39,9 @@ export default function ModuloPerfil() {
     if (!isLast) {
       setCurrent((c) => c + 1);
     } else {
+      // Conclui o quiz: registra o módulo (pra liberar broker e somar score)
+      // e avança pra próxima página do Book.
+      markModuloVisitado("perfil");
       goTo("simulador");
     }
   };
@@ -47,8 +51,13 @@ export default function ModuloPerfil() {
       setShowInsight(false);
       return;
     }
-    if (current === 0) goTo("hub");
-    else setCurrent((c) => c - 1);
+    if (current === 0) {
+      // Volta para o capítulo anterior do book (Localização) em vez da Capa.
+      const prev = getPrevStage("perfil");
+      goTo(prev || "hub");
+    } else {
+      setCurrent((c) => c - 1);
+    }
   };
 
   // Tela de insight entre blocos

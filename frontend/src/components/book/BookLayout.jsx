@@ -6,8 +6,9 @@ import BookFooter from "./BookFooter";
  * Layout padrão das páginas do Book: header sticky + conteúdo com fade-in
  * + footer sticky com navegação Anterior/Próximo.
  *
- * Use `hideFooter` em casos especiais (ex: página de obrigado) e `hideHeader`
- * se a página renderiza seu próprio chrome (raro).
+ * Use `hideFooter` em casos especiais (ex: módulos com fluxo interno
+ * próprio como Quiz e Simulador) e `hideHeader` se a página renderiza
+ * seu próprio chrome (raro).
  */
 export default function BookLayout({
   children,
