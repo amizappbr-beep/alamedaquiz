@@ -4,7 +4,8 @@ import { KANBAN_COLUMNS } from "./constants";
 import MetricsHeader from "./MetricsHeader";
 import KanbanBoard from "./KanbanBoard";
 import LeadDetailDrawer from "./LeadDetailDrawer";
-import { Loader2 } from "lucide-react";
+import WarehouseView from "./WarehouseView";
+import { Loader2, LayoutDashboard, Bell } from "lucide-react";
 
 const POLL_INTERVAL_MS = 30_000; // re-fetch leads every 30s
 
@@ -16,6 +17,7 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [filterTemp, setFilterTemp] = useState("");
   const [openLeadId, setOpenLeadId] = useState(null);
+  const [view, setView] = useState("pipeline"); // 'pipeline' | 'warehouse'
 
   const fetchAll = useCallback(
     async (withLoading = false) => {
@@ -102,16 +104,50 @@ export default function AdminDashboard() {
         hotLeadsCount={hotLeadsCount}
         notifyHot
       />
-      <KanbanBoard
-        columns={KANBAN_COLUMNS}
-        leadsByStatus={leadsByStatus}
-        onOpenLead={(l) => setOpenLeadId(l.id)}
-        onStatusChange={handleStatusChange}
-        search={search}
-        setSearch={setSearch}
-        filterTemp={filterTemp}
-        setFilterTemp={setFilterTemp}
-      />
+
+      {/* Tabs de navegação */}
+      <div className="border-b border-[color:var(--torres-line)] bg-white">
+        <div className="mx-auto flex max-w-[1600px] gap-1 px-6 sm:px-10" data-testid="admin-tabs">
+          <TabButton
+            active={view === "pipeline"}
+            onClick={() => setView("pipeline")}
+            testid="admin-tab-pipeline"
+            icon={<LayoutDashboard className="h-3.5 w-3.5" />}
+          >
+            Pipeline
+            <span className="ml-1.5 rounded-full bg-[color:var(--torres-line)] px-1.5 py-0.5 text-[10px] font-bold tabular-nums" style={{ color: "var(--torres-muted)" }}>
+              {metrics?.total ?? "—"}
+            </span>
+          </TabButton>
+          <TabButton
+            active={view === "warehouse"}
+            onClick={() => setView("warehouse")}
+            testid="admin-tab-warehouse"
+            icon={<Bell className="h-3.5 w-3.5" />}
+          >
+            Lead Warehouse
+            <span className="ml-1.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-emerald-700">
+              {metrics?.em_nutricao ?? 0}
+            </span>
+          </TabButton>
+        </div>
+      </div>
+
+      {view === "pipeline" ? (
+        <KanbanBoard
+          columns={KANBAN_COLUMNS}
+          leadsByStatus={leadsByStatus}
+          onOpenLead={(l) => setOpenLeadId(l.id)}
+          onStatusChange={handleStatusChange}
+          search={search}
+          setSearch={setSearch}
+          filterTemp={filterTemp}
+          setFilterTemp={setFilterTemp}
+        />
+      ) : (
+        <WarehouseView />
+      )}
+
       {openLeadId && (
         <LeadDetailDrawer
           leadId={openLeadId}
@@ -123,5 +159,26 @@ export default function AdminDashboard() {
         />
       )}
     </div>
+  );
+}
+
+function TabButton({ active, onClick, children, testid, icon }) {
+  return (
+    <button
+      onClick={onClick}
+      data-testid={testid}
+      className={`relative inline-flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors ${
+        active ? "text-[color:var(--torres-ink)]" : "text-[color:var(--torres-muted)] hover:text-[color:var(--torres-ink)]"
+      }`}
+    >
+      {icon}
+      {children}
+      {active && (
+        <span
+          className="absolute inset-x-2 bottom-0 h-[2px] rounded-t-full"
+          style={{ backgroundColor: "var(--torres-indigo)" }}
+        />
+      )}
+    </button>
   );
 }

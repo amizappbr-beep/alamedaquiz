@@ -223,6 +223,93 @@ async def admin_add_note(
 # --------- Metrics ---------
 
 
+@router.get("/warehouse")
+async def admin_warehouse(
+    request: Request,
+    current=Depends(get_current_admin),
+    faixa: Optional[Literal["300k", "350k", "400k", "450k", "500k"]] = None,
+    momento: Optional[Literal["0-3m", "3-6m", "6-12m", "12m+", "sem_pressa"]] = None,
+    regiao: Optional[str] = None,
+    tipo: Optional[Literal["casa", "apartamento", "qualquer"]] = None,
+):
+    """Lead Warehouse — leads em nutrição agrupados por faixa de interesse,
+    com filtros para 'match automático' (faixa+momento+região+tipo).
+    Retorna agregações + lista de leads compatíveis.
+    """
+    db = get_db(request)
+
+    base_query: Dict[str, Any] = {"nutricao_warehouse": {"$ne": None}}
+    if faixa:
+        base_query["nutricao_warehouse.faixas_interesse"] = faixa
+    if momento:
+        base_query["nutricao_warehouse.momento_compra"] = momento
+    if regiao:
+        base_query["nutricao_warehouse.regiao_preferida"] = regiao
+    if tipo:
+        base_query["nutricao_warehouse.tipo_preferido"] = tipo
+
+    # Distribuição por faixa (sempre sobre o universo total de nutrição —
+    # ignorando filtro de faixa pra mostrar o quadro completo)
+    universe_query = {"nutricao_warehouse": {"$ne": None}}
+    if momento:
+        universe_query["nutricao_warehouse.momento_compra"] = momento
+    if regiao:
+        universe_query["nutricao_warehouse.regiao_preferida"] = regiao
+    if tipo:
+        universe_query["nutricao_warehouse.tipo_preferido"] = tipo
+
+    # Counts por faixa via aggregation
+    pipeline_faixas = [
+        {"$match": universe_query},
+        {"$unwind": "$nutricao_warehouse.faixas_interesse"},
+        {"$group": {"_id": "$nutricao_warehouse.faixas_interesse", "count": {"$sum": 1}}},
+    ]
+    by_faixa = {"300k": 0, "350k": 0, "400k": 0, "450k": 0, "500k": 0}
+    async for row in db.leads.aggregate(pipeline_faixas):
+        if row["_id"] in by_faixa:
+            by_faixa[row["_id"]] = row["count"]
+
+    # Counts por momento (sob o filtro corrente)
+    pipeline_momento = [
+        {"$match": base_query},
+        {"$group": {"_id": "$nutricao_warehouse.momento_compra", "count": {"$sum": 1}}},
+    ]
+    by_momento: Dict[str, int] = {}
+    async for row in db.leads.aggregate(pipeline_momento):
+        if row["_id"]:
+            by_momento[row["_id"]] = row["count"]
+
+    # Counts por região (sob o filtro corrente)
+    pipeline_regiao = [
+        {"$match": base_query},
+        {"$group": {"_id": "$nutricao_warehouse.regiao_preferida", "count": {"$sum": 1}}},
+    ]
+    by_regiao: Dict[str, int] = {}
+    async for row in db.leads.aggregate(pipeline_regiao):
+        if row["_id"]:
+            by_regiao[row["_id"]] = row["count"]
+
+    # Leads (lista filtrada)
+    leads = (
+        await db.leads.find(base_query, {"_id": 0})
+        .sort("nutricao_warehouse.captured_at", -1)
+        .to_list(500)
+    )
+    for lead in leads:
+        lead.setdefault("status", "novo")
+
+    total_filtered = len(leads)
+
+    return {
+        "total": total_filtered,
+        "by_faixa": by_faixa,
+        "by_momento": by_momento,
+        "by_regiao": by_regiao,
+        "leads": leads,
+        "filters": {"faixa": faixa, "momento": momento, "regiao": regiao, "tipo": tipo},
+    }
+
+
 @router.get("/metrics")
 async def admin_metrics(request: Request, current=Depends(get_current_admin)):
     db = get_db(request)
