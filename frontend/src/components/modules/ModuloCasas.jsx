@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useJourney } from "../../context/JourneyContext";
 import { CASA_MODELOS, sugerirCasa } from "../../lib/conteudo";
 import { PRECO_MODELO, UNIDADES, formatBRL } from "../../lib/tabelaVendas";
-import { Check, ArrowRight, Sparkles, Ruler, Square, Bed, X } from "lucide-react";
-import ModuleFooterCTA from "../ModuleFooterCTA";
+import { Check, Sparkles, Ruler, Square, Bed, X } from "lucide-react";
 
 export default function ModuloCasas() {
   const { markModuloVisitado, goTo, setCasaPreferida, casa_preferida, quiz_answers } =
@@ -212,22 +211,6 @@ export default function ModuloCasas() {
             );
           })}
         </div>
-
-        {/* Next */}
-        <ModuleFooterCTA
-          testId="casas-footer-cta"
-          titulo={
-            casa_preferida
-              ? "Perfeito! Vamos aprofundar seu perfil?"
-              : "Sem ideia ainda? O quiz de perfil pode ajudar."
-          }
-          descricao="6 perguntas rápidas revelam qual casa faz mais sentido."
-          primary={{
-            label: "Fazer quiz de perfil",
-            onClick: () => goTo("perfil"),
-            testId: "casas-next-btn",
-          }}
-        />
       </div>
 
       {/* Planta lightbox */}

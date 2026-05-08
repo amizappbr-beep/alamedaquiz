@@ -167,18 +167,6 @@ export default function ModuloEmpreendimento() {
             </div>
           </button>
         </div>
-
-        {/* CTA próximo passo */}
-        <ModuleFooterCTA
-          testId="empreendimento-footer-cta"
-          titulo="Que tal descobrir qual das 3 plantas combina com você?"
-          descricao="Te mostramos o modelo ideal em 30 segundos."
-          primary={{
-            label: "Escolher minha casa",
-            onClick: () => goTo("casas"),
-            testId: "empreendimento-next-btn",
-          }}
-        />
       </div>
 
       {/* Lightbox with navigation */}

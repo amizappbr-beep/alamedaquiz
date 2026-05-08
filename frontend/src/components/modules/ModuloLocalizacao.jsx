@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 import { useJourney } from "../../context/JourneyContext";
 import { ENDERECO } from "../../lib/assets";
 import { MapPin, Navigation, ExternalLink, Map as MapIcon } from "lucide-react";
-import ModuleFooterCTA from "../ModuleFooterCTA";
 
 export default function ModuloLocalizacao() {
   const { markModuloVisitado, goTo } = useJourney();
@@ -91,18 +90,6 @@ export default function ModuloLocalizacao() {
             referrerPolicy="no-referrer-when-downgrade"
           />
         </div>
-
-        {/* Next */}
-        <ModuleFooterCTA
-          testId="localizacao-footer-cta"
-          titulo="Vamos conversar sobre sua proposta?"
-          descricao="Atendimento imediato pelo WhatsApp ou visita agendada no seu horário."
-          primary={{
-            label: "Falar com corretor",
-            onClick: () => goTo("corretor"),
-            testId: "localizacao-next-btn",
-          }}
-        />
       </div>
     </section>
   );

@@ -2,7 +2,6 @@ import React, { useLayoutEffect } from "react";
 import "@/App.css";
 import { Toaster } from "sonner";
 import { JourneyProvider, useJourney } from "./context/JourneyContext";
-import Header from "./components/Header";
 import Hub from "./components/Hub";
 import ModuloEmpreendimento from "./components/modules/ModuloEmpreendimento";
 import ModuloCasas from "./components/modules/ModuloCasas";
@@ -17,6 +16,7 @@ import ModuloObrigado from "./components/modules/ModuloObrigado";
 import ModuloLocalizacao from "./components/modules/ModuloLocalizacao";
 import Gate from "./components/Gate";
 import AdminApp from "./admin/AdminApp";
+import BookLayout from "./components/book/BookLayout";
 
 // Robust scroll-to-top for every stage transition.
 // Handles mobile quirks: iOS Safari rubber-band, Android Chrome URL bar,
@@ -55,33 +55,64 @@ function Router() {
   const { stage, registered } = useJourney();
   useScrollTopOnStageChange(stage, registered);
   if (!registered) return <Gate />;
+
+  // Stages que NÃO entram no Book chrome (header/footer):
+  //  - "hub" tem hero próprio em tela cheia (a "capa")
+  //  - "imediato" / "agendamento" / "obrigado" são fluxos de saída
+  //  - "resultado_simulacao" é tela de checkout-like
+  const fullScreenStages = new Set([
+    "hub",
+    "imediato",
+    "agendamento",
+    "obrigado",
+    "resultado_simulacao",
+  ]);
+
+  let content;
   switch (stage) {
     case "empreendimento":
-      return <ModuloEmpreendimento />;
+      content = <ModuloEmpreendimento />;
+      break;
     case "casas":
-      return <ModuloCasas />;
+      content = <ModuloCasas />;
+      break;
     case "perfil":
-      return <ModuloPerfil />;
+      content = <ModuloPerfil />;
+      break;
     case "simulador":
-      return <ModuloSimulador />;
+      content = <ModuloSimulador />;
+      break;
     case "resultado_simulacao":
-      return <ModuloResultadoSimulacao />;
+      content = <ModuloResultadoSimulacao />;
+      break;
     case "diferenciais":
-      return <ModuloDiferenciais />;
+      content = <ModuloDiferenciais />;
+      break;
     case "localizacao":
-      return <ModuloLocalizacao />;
+      content = <ModuloLocalizacao />;
+      break;
     case "corretor":
-      return <ModuloCorretor />;
+      content = <ModuloCorretor />;
+      break;
     case "agendamento":
-      return <ModuloAgendamento />;
+      content = <ModuloAgendamento />;
+      break;
     case "imediato":
-      return <ModuloImediato />;
+      content = <ModuloImediato />;
+      break;
     case "obrigado":
-      return <ModuloObrigado />;
+      content = <ModuloObrigado />;
+      break;
     case "hub":
     default:
-      return <Hub />;
+      content = <Hub />;
   }
+
+  if (fullScreenStages.has(stage)) {
+    // Capa e fluxos de saída sem o chrome do Book
+    return content;
+  }
+  return <BookLayout>{content}</BookLayout>;
 }
 
 export default function App() {
@@ -115,11 +146,5 @@ export default function App() {
 }
 
 function InnerApp() {
-  const { registered } = useJourney();
-  return (
-    <>
-      {registered && <Header />}
-      <Router />
-    </>
-  );
+  return <Router />;
 }

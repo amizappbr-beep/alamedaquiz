@@ -1,0 +1,54 @@
+{
+  "summary": "Frontend-only test of the new Book Digital flow. 17/19 e2e checks pass: Hub renders as capa with all 3 expected testids + painel link, no book-chrome leak on Hub/imediato, BookHeader shows 8 progress dots + locked broker tooltip works correctly with the exact spec copy, BookFooter copy is contextual ('Escolher minha casa ideal', 'Ver os diferenciais', etc.), prev/next nav works, mobile shows 'X/8 · LABEL' counter and slim progress bar, dot navigation does NOT prematurely unlock the broker, /admin and /painel.html still load correctly. CRITICAL BUG: broker unlocks one page TOO EARLY (already true on page 3 'Casas' instead of page 4 'Diferenciais'). RCA = leftover `useEffect(() => markModuloVisitado('casas'), [])` in ModuloCasas.jsx (and 5 other modules) auto-marks the page visited on MOUNT instead of on Next click. SECONDARY BUG: 'Maximum update depth exceeded' React loop appears on page 3 (Casas) — likely same RCA cluster.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "BookHeader (broker gate)",
+        "issue": "data-broker-unlocked='true' já na página 3 (Casas). Spec exige false em 1,2,3 e true só a partir da pág 4 (após clicar Próximo em Casas). Auto-detected via Playwright: ao chegar em /casas vindo de /empreendimento, o atributo já é 'true'. Quebra a mecânica central de gamificação.",
+        "selector": "[data-testid=\"book-broker-btn\"][data-broker-unlocked]",
+        "priority": "HIGH"
+      },
+      {
+        "component": "ModuloCasas (e provavelmente outros) — render loop",
+        "issue": "Console Chrome devtools repete 'Maximum update depth exceeded. This can happen when a component calls setState inside useEffect…' várias vezes ao entrar em /casas. Não trava a UI mas indica vazamento — provavelmente o mesmo RCA do bug do broker (useEffect+markModuloVisitado em loop através do interacoes array).",
+        "selector": "/casas page mount",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Gate → Hub → Empreendimento → Casas → Diferenciais (gatilho do broker)",
+        "issue": "Esperado: ao clicar book-next-btn em /casas, marcar 'casas' visitado e DESBLOQUEAR. Atual: o broker já desbloqueia ao SIMPLESMENTE entrar em /casas (auto-mount mark). Resultado: usuário pode ver 'Falar com corretor' liberado sem nem precisar clicar Próximo na pág 3.",
+        "affected_selectors": ["[data-testid=\"book-broker-btn\"]"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Remover os `useEffect(() => markModuloVisitado('<stage>'), [])` de TODOS os 6 módulos: ModuloEmpreendimento.jsx (linha 13), ModuloCasas.jsx (linha 14), ModuloDiferenciais.jsx (linha 10), ModuloLocalizacao.jsx (linha 10), ModuloPerfil.jsx (linha 18), ModuloSimulador.jsx (linha 54), ModuloCorretor.jsx (linha 9). O BookFooter.handleNext já chama markModuloVisitado(current.stage) — é a única fonte de verdade na nova arquitetura. Esses useEffect são dead-code da arquitetura antiga e estão causando o desbloqueio prematuro do broker.",
+    "Diagnosticar o 'Maximum update depth exceeded' que aparece em /casas. Hipótese: markModuloVisitado sempre faz push em `interacoes` (mesmo quando o módulo já está visitado), o que pode estar disparando re-render cycle se algum hook a jusante reagir a interacoes. Após remover os useEffect acima o erro provavelmente desaparece.",
+    "Considerar tornar `markModuloVisitado` idempotente também em `interacoes` (não fazer push se a entrada 'modulo_visitado' do mesmo módulo já existir) — robustez extra contra duplos toasts/duplos eventos.",
+    "RETESTE rápido: depois do fix, validar que (a) entrar em /casas mantém data-broker-unlocked='false', (b) clicar book-next-btn em /casas desbloqueia (vira 'true' em /diferenciais), (c) o erro de console some."
+  ],
+  "critical_code_review_comments": [
+    "ModuloCasas.jsx linha 13-16, ModuloEmpreendimento.jsx linha 12-15, ModuloDiferenciais.jsx, ModuloLocalizacao.jsx, ModuloPerfil.jsx, ModuloSimulador.jsx, ModuloCorretor.jsx: todos têm `useEffect(() => markModuloVisitado(stage), [])` — código MORTO da arquitetura antiga. Quebra o gatilho do broker e provavelmente é a fonte do render loop. Deletar.",
+    "JourneyContext.markModuloVisitado: ainda faz push em interacoes mesmo quando o módulo já está em modulos_visitados — não é idempotente. Defensivo: dedup também em interacoes.",
+    "BookFooter.jsx (linha 26-44): a lógica de toast só dispara se !wasVisited, ótimo — mas como agora os módulos auto-marcam no mount, na prática `wasVisited` SEMPRE é true quando o user clica Próximo, então o toast de recompensa NUNCA aparece em produção (Playwright captou 0 toasts visíveis depois do clique de Casas porque `casas` já estava em modulos_visitados via mount-effect). Outra consequência grave do auto-mark.",
+    "App.js fullScreenStages: corretor NÃO está no set, então tem book-chrome — confirmado funcionando ✓. Apenas hub/imediato/agendamento/obrigado/resultado_simulacao são fullscreen — alinhado com spec.",
+    "Hub.jsx: render correto, todos os data-testids do spec presentes (hub-screen, hub-start-btn, hub-book-summary, hub-progress-summary, hub-painel-link)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (não testado nesta iteração)", "frontend": "89% (17/19 — 2 bugs HIGH bloqueiam mecânica central)"},
+  "test_credentials": "Lead público: Maria Teste / 27999990001 (qualquer telefone BR válido funciona). Admin (não usado): admin@alameda500.com / vILabMQvT59VB-8NW7IclIu4.",
+  "seed_data_creation": "Limpeza de localStorage 'alameda500_journey_v1' antes de cada Playwright run (page.evaluate). Sem seed no backend — nenhum lead foi POSTado com sucesso porque o teste não chegou ao /imediato submit (bloqueado pelo render loop em /casas).",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Próximo testing agent: depois do fix dos useEffect órfãos nos 6 módulos, retestar (1) data-broker-unlocked é 'false' em /empreendimento e em /casas; (2) clicar book-next-btn em /casas faz attr virar 'true' em /diferenciais; (3) toast '+20 pontos' aparece (sonner top-center); (4) console limpo, sem 'Maximum update depth'; (5) e2e completo Maria Teste → /imediato submit cria lead via POST /api/leads com modulos_visitados=[empreendimento,casas,diferenciais,localizacao,perfil,simulador]. Coverage já validado nesta iteração (manter): Hub testids, no-chrome em hub/imediato, mobile counter + progress bar, dots não desbloqueiam atalho, /admin + /painel.html funcionam, tooltip lock com texto exato.",
+  "rca of the issue": "RCA: Os 6 módulos públicos (Empreendimento, Casas, Diferenciais, Localizacao, Perfil, Simulador) e Corretor mantêm `useEffect(() => { markModuloVisitado('<stage>'); }, [])` como sobrevivente da arquitetura ANTIGA (onde cada módulo era uma rota standalone que se auto-registrava). Na nova arquitetura Book, o registro é feito EXCLUSIVAMENTE pelo BookFooter ao clicar Próximo. Consequências: (a) ao entrar em /casas o módulo é marcado visitado IMEDIATAMENTE — `isBrokerUnlocked` retorna true porque já tem ['empreendimento','casas'] em modulos_visitados — quebrando o gatilho de gamificação. (b) `markModuloVisitado` faz push em `interacoes` mesmo quando o módulo já está visitado (não idempotente em interacoes), o que combinado com algum re-render gera o 'Maximum update depth exceeded'. (c) toasts de recompensa nunca disparam em produção porque o módulo já está marcado quando o user clica Próximo (a lógica `if (!wasVisited)` no BookFooter sempre é falsa). REPRO: 1. limpar localStorage 2. Gate → Hub → click hub-start-btn (vai pra /empreendimento, attr='false' ✓) 3. click book-next-btn (vai pra /casas, attr='true' ✗ — deveria continuar 'false'). MITIGAÇÃO: deletar os 7 useEffect órfãos (1 linha por módulo). Risco: nenhum — o BookFooter já cobre. Após o fix, validar com Playwright que o attr permanece false até clicar Próximo em Casas."
+}

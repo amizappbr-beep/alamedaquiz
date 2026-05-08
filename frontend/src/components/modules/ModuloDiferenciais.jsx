@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 import { useJourney } from "../../context/JourneyContext";
 import { DIFERENCIAIS } from "../../lib/conteudo";
 import * as LucideIcons from "lucide-react";
-import ModuleFooterCTA from "../ModuleFooterCTA";
 
 export default function ModuloDiferenciais() {
   const { markModuloVisitado, goTo } = useJourney();
@@ -60,17 +59,6 @@ export default function ModuloDiferenciais() {
             );
           })}
         </div>
-
-        <ModuleFooterCTA
-          testId="diferenciais-footer-cta"
-          titulo="Gostou? Agora é decidir quando conversar com o corretor."
-          descricao="Atendimento imediato pelo WhatsApp ou visita agendada no seu horário."
-          primary={{
-            label: "Falar com corretor",
-            onClick: () => goTo("corretor"),
-            testId: "diferenciais-next-btn",
-          }}
-        />
       </div>
     </section>
   );
