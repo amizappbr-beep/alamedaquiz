@@ -77,6 +77,19 @@ class LeadCreate(BaseModel):
     origem: Optional[str] = None
 
 
+class NutricaoWarehouse(BaseModel):
+    """Sinal de nutrição: o lead disse 'me avise quando lançar...'.
+    Vai alimentar o futuro Lead Warehouse multi-empreendimento."""
+    model_config = ConfigDict(extra="ignore")
+    faixas_interesse: List[Literal["300k", "350k", "400k", "450k", "500k"]] = Field(default_factory=list)
+    momento_compra: Optional[Literal["0-3m", "3-6m", "6-12m", "12m+", "sem_pressa"]] = None
+    tipo_preferido: Optional[Literal["casa", "apartamento", "qualquer"]] = None
+    regiao_preferida: Optional[str] = None  # ex: serra, vitoria, vila_velha, qualquer
+    observacoes: Optional[str] = None
+    captured_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    source: Optional[str] = None  # 'capa' | 'obrigado' — onde o usuário preencheu
+
+
 class Lead(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -96,6 +109,7 @@ class Lead(BaseModel):
     temperatura: str = "frio"
     origem: Optional[str] = None
     status: str = "novo"  # Kanban: novo|contatado|agendado|negociacao|ganho|perdido
+    nutricao_warehouse: Optional[NutricaoWarehouse] = None
     admin_notes: List[Dict[str, Any]] = Field(default_factory=list)
     status_history: List[Dict[str, Any]] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -412,6 +426,83 @@ async def leads_summary():
         "score_medio": avg_score,
         "score_maximo": max_score,
     }
+
+
+# -------------------- Lead Warehouse (nutrição) --------------------
+
+class WarehouseSignalCreate(BaseModel):
+    """Payload público enviado quando o lead diz 'me avise quando lançar...'."""
+    model_config = ConfigDict(extra="ignore")
+    lead_id: Optional[str] = None  # se já existe lead na sessão, atualiza ele
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    nutricao: NutricaoWarehouse
+
+
+@api_router.post("/leads/nutricao", response_model=Lead)
+async def capture_warehouse_signal(payload: WarehouseSignalCreate):
+    """Cria ou atualiza um lead com o sinal de nutrição (Lead Warehouse).
+
+    - Se `lead_id` for fornecido e existir, faz update do campo nutricao_warehouse.
+    - Caso contrário, cria um lead novo com status='novo' e o sinal já anexado.
+    Em ambos os casos, lead ganha tag 'nutricao' em status_history para o admin
+    poder rastrear como entrou.
+    """
+    now = datetime.now(timezone.utc)
+    nutricao_dict = payload.nutricao.model_dump()
+    nutricao_dict["captured_at"] = nutricao_dict["captured_at"].isoformat()
+
+    if payload.lead_id:
+        existing = await db.leads.find_one({"id": payload.lead_id}, {"_id": 0})
+        if existing:
+            update = {"nutricao_warehouse": nutricao_dict, "updated_at": now.isoformat()}
+            # Mantém o nome/phone se vieram (pode ser um lead da sessão sem dados)
+            if payload.name and not existing.get("name"):
+                update["name"] = payload.name.strip()
+            if payload.phone and not existing.get("phone"):
+                update["phone"] = payload.phone.strip()
+            if payload.email and not existing.get("email"):
+                update["email"] = payload.email.strip()
+            await db.leads.update_one(
+                {"id": payload.lead_id},
+                {
+                    "$set": update,
+                    "$push": {
+                        "status_history": {
+                            "from": existing.get("status", "novo"),
+                            "to": existing.get("status", "novo"),
+                            "tag": "nutricao_capturada",
+                            "by": "system",
+                            "at": now.isoformat(),
+                        }
+                    },
+                },
+            )
+            updated = await db.leads.find_one({"id": payload.lead_id}, {"_id": 0})
+            for k in ("created_at", "updated_at"):
+                if isinstance(updated.get(k), str):
+                    try:
+                        updated[k] = datetime.fromisoformat(updated[k])
+                    except Exception:
+                        pass
+            return updated
+
+    # Lead novo (não tinha sessão ou lead_id não existe mais)
+    lead = Lead(
+        name=(payload.name or "").strip() or None,
+        phone=(payload.phone or "").strip() or None,
+        email=(payload.email or "").strip() or None,
+        origem="warehouse_capture",
+        nutricao_warehouse=payload.nutricao,
+    )
+    doc = lead.model_dump()
+    doc["created_at"] = doc["created_at"].isoformat()
+    doc["updated_at"] = doc["updated_at"].isoformat()
+    if doc.get("nutricao_warehouse") and isinstance(doc["nutricao_warehouse"].get("captured_at"), datetime):
+        doc["nutricao_warehouse"]["captured_at"] = doc["nutricao_warehouse"]["captured_at"].isoformat()
+    await db.leads.insert_one(doc)
+    return lead
 
 
 app.include_router(api_router)

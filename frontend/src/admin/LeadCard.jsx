@@ -7,6 +7,7 @@ import {
   Calculator,
   Calendar,
   Zap,
+  Bell,
   MoreVertical,
 } from "lucide-react";
 
@@ -149,6 +150,15 @@ export default function LeadCard({ lead, onOpen, onStatusChange }) {
           <span className="inline-flex items-center gap-0.5 rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
             <Calculator className="h-2.5 w-2.5" />
             Simulou
+          </span>
+        )}
+        {lead.nutricao_warehouse && (
+          <span
+            data-testid={`lead-card-${lead.id}-warehouse`}
+            className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700"
+          >
+            <Bell className="h-2.5 w-2.5" />
+            Nutrição
           </span>
         )}
       </div>

@@ -95,6 +95,12 @@ export default function MetricsHeader({ metrics, onLogout, onRefresh, hotLeadsCo
           <Tile label="Agendados" value={metrics?.agendamentos ?? 0} />
           <Tile label="Simularam" value={metrics?.com_simulacao ?? 0} />
           <Tile
+            label="Em nutrição"
+            value={metrics?.em_nutricao ?? 0}
+            color="#059669"
+            testid="admin-metric-warehouse"
+          />
+          <Tile
             label="Score médio"
             value={metrics?.score_medio ?? "—"}
             suffix={metrics?.score_medio ? "/150" : ""}

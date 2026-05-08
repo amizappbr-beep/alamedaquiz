@@ -128,7 +128,8 @@ async def admin_list_leads(
     current=Depends(get_current_admin),
     status: Optional[LeadStatusLiteral] = None,
     temperatura: Optional[Literal["quente", "morno", "frio"]] = None,
-    q: Optional[str] = None,  # search by name/phone
+    nutricao: Optional[bool] = None,  # True = só leads em nutrição
+    q: Optional[str] = None,
     limit: int = 500,
 ):
     db = get_db(request)
@@ -137,6 +138,10 @@ async def admin_list_leads(
         query["status"] = status
     if temperatura:
         query["temperatura"] = temperatura
+    if nutricao is True:
+        query["nutricao_warehouse"] = {"$ne": None}
+    elif nutricao is False:
+        query["nutricao_warehouse"] = None
     if q:
         q_re = {"$regex": q.strip(), "$options": "i"}
         query["$or"] = [{"name": q_re}, {"phone": q_re}, {"email": q_re}]
@@ -230,6 +235,7 @@ async def admin_metrics(request: Request, current=Depends(get_current_admin)):
     agendados = await db.leads.count_documents({"agendamento": {"$ne": None}})
     com_simulacao = await db.leads.count_documents({"simulacao.renda_bruta": {"$gt": 0}})
     com_casa = await db.leads.count_documents({"casa_preferida": {"$ne": None}})
+    em_nutricao = await db.leads.count_documents({"nutricao_warehouse": {"$ne": None}})
 
     # Counts by kanban status (include legacy "novo" default)
     status_counts = {s: 0 for s in LEAD_STATUSES}
@@ -264,6 +270,7 @@ async def admin_metrics(request: Request, current=Depends(get_current_admin)):
         "atendimentos_imediatos": imediatos,
         "com_simulacao": com_simulacao,
         "com_casa_preferida": com_casa,
+        "em_nutricao": em_nutricao,
         "score_medio": avg_score,
         "score_maximo": max_score,
     }

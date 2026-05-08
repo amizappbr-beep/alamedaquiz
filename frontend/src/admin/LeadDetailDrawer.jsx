@@ -22,7 +22,35 @@ import {
   Home as HomeIcon,
   Clock,
   User,
+  Bell,
+  Sparkles,
 } from "lucide-react";
+
+const FAIXA_LABEL = {
+  "300k": "Até R$ 300 mil",
+  "350k": "R$ 350 mil",
+  "400k": "R$ 400 mil",
+  "450k": "R$ 450 mil",
+  "500k": "R$ 500 mil+",
+};
+const MOMENTO_LABEL = {
+  "0-3m": "Próximos 3 meses",
+  "3-6m": "3 a 6 meses",
+  "6-12m": "6 a 12 meses",
+  "12m+": "Mais de 1 ano",
+  sem_pressa: "Sem pressa",
+};
+const TIPO_LABEL = {
+  casa: "Casa",
+  apartamento: "Apartamento",
+  qualquer: "Tanto faz",
+};
+const REGIAO_LABEL = {
+  serra: "Serra",
+  vitoria: "Vitória",
+  vila_velha: "Vila Velha",
+  qualquer: "Qualquer",
+};
 
 export default function LeadDetailDrawer({ leadId, onClose, onStatusChanged }) {
   const { axiosAdmin } = useAdmin();
@@ -315,6 +343,68 @@ export default function LeadDetailDrawer({ leadId, onClose, onStatusChanged }) {
                   <InfoItem label="Faixa" value={sim.faixa_mcmv || "—"} />
                   <InfoItem label="Parcela" value={formatBRL(sim.parcela_estimada)} />
                   <InfoItem label="Financiado" value={formatBRL(sim.valor_financiado)} />
+                </div>
+              </section>
+            )}
+
+            {/* Lead Warehouse — sinal de nutrição */}
+            {lead.nutricao_warehouse && (
+              <section
+                className="mt-4 rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-50/40 p-4"
+                data-testid="lead-drawer-warehouse"
+              >
+                <div className="flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-emerald-700" />
+                  <div className="serif text-sm font-semibold" style={{ color: "var(--torres-ink)" }}>
+                    Lead Warehouse · Nutrição
+                  </div>
+                  <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                    <Sparkles className="h-2.5 w-2.5" />
+                    Aguarda lançamento
+                  </span>
+                </div>
+                <div className="mt-3 space-y-2 text-xs">
+                  {lead.nutricao_warehouse.faixas_interesse?.length > 0 && (
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider" style={{ color: "var(--torres-muted)" }}>
+                        Faixas de interesse
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {lead.nutricao_warehouse.faixas_interesse.map((f) => (
+                          <span
+                            key={f}
+                            className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold"
+                            style={{ color: "var(--torres-indigo)", border: "1px solid var(--torres-line)" }}
+                          >
+                            {FAIXA_LABEL[f] || f}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-2">
+                    <InfoItem
+                      label="Momento"
+                      value={MOMENTO_LABEL[lead.nutricao_warehouse.momento_compra] || "—"}
+                    />
+                    <InfoItem
+                      label="Tipo"
+                      value={TIPO_LABEL[lead.nutricao_warehouse.tipo_preferido] || "—"}
+                    />
+                    <InfoItem
+                      label="Região"
+                      value={REGIAO_LABEL[lead.nutricao_warehouse.regiao_preferida] || lead.nutricao_warehouse.regiao_preferida || "—"}
+                    />
+                    <InfoItem
+                      label="Origem"
+                      value={lead.nutricao_warehouse.source === "obrigado" ? "Pós-jornada" : "Capa do book"}
+                    />
+                  </div>
+                  {lead.nutricao_warehouse.observacoes && (
+                    <div className="rounded-xl bg-white p-2.5 text-[12px] italic" style={{ color: "var(--torres-ink)" }}>
+                      "{lead.nutricao_warehouse.observacoes}"
+                    </div>
+                  )}
                 </div>
               </section>
             )}

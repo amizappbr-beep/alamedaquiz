@@ -4,6 +4,7 @@ import { CASA_MODELOS } from "../../lib/conteudo";
 import { CheckCircle2, Calendar, Zap, RotateCcw, ArrowRight } from "lucide-react";
 import { buildWhatsappUrl } from "../../lib/quizData";
 import CertificadoExploracao from "../CertificadoExploracao";
+import WarehouseCaptureCard from "../WarehouseCaptureCard";
 
 export default function ModuloObrigado() {
   const {
@@ -120,6 +121,15 @@ export default function ModuloObrigado() {
           casaId={casa_preferida}
           leadScore={leadScore}
         />
+
+        {/* Lead Warehouse — fica em contato pra próximos lançamentos */}
+        <div className="mt-10">
+          <WarehouseCaptureCard
+            source="obrigado"
+            title="Quer ficar perto da Torres?"
+            subtitle="Mesmo se este empreendimento não for o seu agora, podemos te avisar quando lançar algo na sua medida."
+          />
+        </div>
 
         {/* Actions */}
         <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">

@@ -3,6 +3,7 @@ import { useJourney } from "../context/JourneyContext";
 import { ALAMEDA_IMAGES } from "../lib/assets";
 import { BOOK_PAGES, isBrokerUnlocked } from "../lib/bookPages";
 import { ArrowRight, Lock, Check, MapPin } from "lucide-react";
+import WarehouseCaptureCard from "./WarehouseCaptureCard";
 
 /**
  * "Capa" do Book Alameda 500 — substitui o antigo Hub-grid.
@@ -182,6 +183,16 @@ export default function Hub() {
           <span className="text-xs" style={{ color: "var(--torres-muted)" }}>
             Quanto mais páginas você descobre, melhor preparamos seu atendimento.
           </span>
+        </div>
+
+        {/* Lead Warehouse — captura sazonal/futura */}
+        <div className="mt-8">
+          <WarehouseCaptureCard
+            source="capa"
+            requireContact
+            title="Não é o momento certo? Sem problema."
+            subtitle="A Torres tem outros empreendimentos a caminho. Diga o que faz sentido pra você e te avisamos quando lançar algo compatível."
+          />
         </div>
 
         {/* Atalho discreto pro painel restrito */}
