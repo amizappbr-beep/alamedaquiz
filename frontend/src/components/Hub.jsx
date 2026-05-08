@@ -2,7 +2,7 @@ import React from "react";
 import { useJourney } from "../context/JourneyContext";
 import { ALAMEDA_IMAGES } from "../lib/assets";
 import { BOOK_PAGES, isBrokerUnlocked } from "../lib/bookPages";
-import { ArrowRight, Lock, Check, MapPin } from "lucide-react";
+import { ArrowRight, Lock, Check, MapPin, RotateCcw } from "lucide-react";
 import WarehouseCaptureCard from "./WarehouseCaptureCard";
 
 /**
@@ -11,9 +11,19 @@ import WarehouseCaptureCard from "./WarehouseCaptureCard";
  * cada página o leva à próxima na ordem certa.
  */
 export default function Hub() {
-  const { goTo, modulos_visitados, leadScore, name } = useJourney();
+  const { goTo, modulos_visitados, leadScore, name, reset } = useJourney();
   const brokerOk = isBrokerUnlocked(modulos_visitados);
   const firstName = (name || "").split(" ")[0];
+
+  const handleReset = () => {
+    if (
+      window.confirm(
+        "Tem certeza que quer reiniciar sua jornada? Todas as suas escolhas e simulações serão apagadas."
+      )
+    ) {
+      reset();
+    }
+  };
 
   // Lista de páginas do book (skipping a própria capa pra mostrar como sumário)
   const summary = BOOK_PAGES.filter((p) => p.stage !== "hub");
@@ -195,8 +205,8 @@ export default function Hub() {
           />
         </div>
 
-        {/* Atalho discreto pro painel restrito */}
-        <div className="mt-8 flex justify-center">
+        {/* Atalho discreto pro painel restrito + reset */}
+        <div className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-6">
           <a
             href="/painel.html"
             data-testid="hub-painel-link"
@@ -205,6 +215,16 @@ export default function Hub() {
           >
             Área restrita · Torres Engenharia
           </a>
+          <button
+            type="button"
+            onClick={handleReset}
+            data-testid="hub-reset-btn"
+            className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.22em] underline-offset-4 transition-colors hover:underline"
+            style={{ color: "var(--torres-muted)" }}
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reiniciar minha jornada
+          </button>
         </div>
       </div>
     </section>
