@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { KANBAN_COLUMNS, TEMP_LABEL, CASA_LABEL, formatRelative } from "./constants";
+import { computeSlaStatus, SLA_LABEL } from "./channels";
+import BrokerAvatar from "./BrokerAvatar";
 import {
   Flame,
   Phone,
@@ -9,6 +11,8 @@ import {
   Zap,
   Bell,
   MoreVertical,
+  AlertTriangle,
+  Clock,
 } from "lucide-react";
 
 /**
@@ -17,6 +21,11 @@ import {
 export default function LeadCard({ lead, onOpen, onStatusChange }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const temp = TEMP_LABEL[lead.temperatura] || TEMP_LABEL.frio;
+  const slaState = computeSlaStatus(lead);
+  const sla = SLA_LABEL[slaState];
+  const ownerBroker = lead.owner_broker_id
+    ? { id: lead.owner_broker_id, name: lead.owner_broker_name }
+    : null;
 
   const handleDragStart = (e) => {
     e.dataTransfer.setData("text/plain", lead.id);
@@ -35,7 +44,13 @@ export default function LeadCard({ lead, onOpen, onStatusChange }) {
       onDragEnd={handleDragEnd}
       onClick={() => onOpen(lead)}
       data-testid={`lead-card-${lead.id}`}
-      className="group cursor-pointer rounded-2xl border border-[color:var(--torres-line)] bg-white p-3 transition-all hover:-translate-y-0.5 hover:border-[color:var(--torres-indigo)] hover:shadow-[0_8px_24px_-10px_rgba(100,113,162,0.3)]"
+      className={`group cursor-pointer rounded-2xl border bg-white p-3 transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-10px_rgba(100,113,162,0.3)] ${
+        slaState === "breached"
+          ? "border-red-300 hover:border-red-400"
+          : slaState === "warn"
+          ? "border-amber-300 hover:border-amber-400"
+          : "border-[color:var(--torres-line)] hover:border-[color:var(--torres-indigo)]"
+      }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
@@ -163,9 +178,34 @@ export default function LeadCard({ lead, onOpen, onStatusChange }) {
         )}
       </div>
 
-      <div className="mt-2 flex items-center justify-between text-[10px]" style={{ color: "var(--torres-muted)" }}>
-        <span>{lead.modulos_visitados?.length || 0}/6 módulos</span>
-        <span>{formatRelative(lead.created_at)}</span>
+      <div className="mt-2 flex items-center justify-between gap-2 text-[10px]" style={{ color: "var(--torres-muted)" }}>
+        <div className="flex items-center gap-1.5">
+          <BrokerAvatar broker={ownerBroker} size="sm" title={ownerBroker ? `Atribuído a ${ownerBroker.name}` : "Sem dono — disponível no pool"} />
+          <span className="truncate" data-testid={`lead-card-${lead.id}-owner`}>
+            {ownerBroker ? ownerBroker.name?.split(" ")[0] : "Sem dono"}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {slaState !== "ok" && (
+            <span
+              data-testid={`lead-card-${lead.id}-sla-${slaState}`}
+              className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${sla.bg}`}
+              title={
+                slaState === "breached"
+                  ? "SLA estourado — contate este lead com prioridade."
+                  : "Atenção — SLA próximo do limite."
+              }
+            >
+              {slaState === "breached" ? (
+                <AlertTriangle className="h-2.5 w-2.5" />
+              ) : (
+                <Clock className="h-2.5 w-2.5" />
+              )}
+              {sla.text}
+            </span>
+          )}
+          <span>{formatRelative(lead.created_at)}</span>
+        </div>
       </div>
     </div>
   );

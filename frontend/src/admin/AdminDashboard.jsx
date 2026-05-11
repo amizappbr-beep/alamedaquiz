@@ -5,7 +5,8 @@ import MetricsHeader from "./MetricsHeader";
 import KanbanBoard from "./KanbanBoard";
 import LeadDetailDrawer from "./LeadDetailDrawer";
 import WarehouseView from "./WarehouseView";
-import { Loader2, LayoutDashboard, Bell } from "lucide-react";
+import BrokersView from "./BrokersView";
+import { Loader2, LayoutDashboard, Bell, Users } from "lucide-react";
 
 const POLL_INTERVAL_MS = 30_000; // re-fetch leads every 30s
 
@@ -17,7 +18,21 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [filterTemp, setFilterTemp] = useState("");
   const [openLeadId, setOpenLeadId] = useState(null);
-  const [view, setView] = useState("pipeline"); // 'pipeline' | 'warehouse'
+  const [view, setView] = useState("pipeline"); // 'pipeline' | 'warehouse' | 'brokers'
+  const [brokers, setBrokers] = useState([]);
+
+  const fetchBrokers = useCallback(async () => {
+    try {
+      const { data } = await axiosAdmin.get("/admin/brokers");
+      setBrokers(data);
+    } catch {
+      /* handled by interceptor */
+    }
+  }, [axiosAdmin]);
+
+  useEffect(() => {
+    fetchBrokers();
+  }, [fetchBrokers]);
 
   const fetchAll = useCallback(
     async (withLoading = false) => {
@@ -130,6 +145,17 @@ export default function AdminDashboard() {
               {metrics?.em_nutricao ?? 0}
             </span>
           </TabButton>
+          <TabButton
+            active={view === "brokers"}
+            onClick={() => setView("brokers")}
+            testid="admin-tab-brokers"
+            icon={<Users className="h-3.5 w-3.5" />}
+          >
+            Corretores
+            <span className="ml-1.5 rounded-full bg-[color:var(--torres-line)] px-1.5 py-0.5 text-[10px] font-bold tabular-nums" style={{ color: "var(--torres-muted)" }}>
+              {metrics?.brokers_ativos ?? brokers.length}
+            </span>
+          </TabButton>
         </div>
       </div>
 
@@ -143,18 +169,33 @@ export default function AdminDashboard() {
           setSearch={setSearch}
           filterTemp={filterTemp}
           setFilterTemp={setFilterTemp}
+          brokers={brokers}
         />
-      ) : (
+      ) : view === "warehouse" ? (
         <WarehouseView />
+      ) : (
+        <BrokersView />
       )}
 
       {openLeadId && (
         <LeadDetailDrawer
           leadId={openLeadId}
+          brokers={brokers}
           onClose={() => setOpenLeadId(null)}
           onStatusChanged={(id, next) => {
             setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status: next } : l)));
             axiosAdmin.get("/admin/metrics").then((r) => setMetrics(r.data)).catch(() => {});
+          }}
+          onOwnerChanged={(id, ownerId, ownerName) => {
+            setLeads((prev) =>
+              prev.map((l) =>
+                l.id === id
+                  ? { ...l, owner_broker_id: ownerId, owner_broker_name: ownerName }
+                  : l
+              )
+            );
+            // Brokers counts changed — refetch
+            fetchBrokers();
           }}
         />
       )}

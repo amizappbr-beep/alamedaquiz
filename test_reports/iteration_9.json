@@ -1,0 +1,36 @@
+{
+  "summary": "Release 2 testing: 17/17 backend tests PASSED for brokers CRUD, round-robin auto-assign, manual owner assign/unassign, idempotent counters, new metrics (sla_atrasados/brokers_ativos/leads_sem_dono), filters (owner/unassigned/channel), and delete-broker-unassigns-leads. Admin UI fully validated: Corretores tab + cards (broker-card-{id}, broker-toggle, broker-delete, broker-leads-count) render; metric tiles 'SLA ATRASADO=14' (red) and 'SEM DONO=78' visible; lead cards show broker-avatar-{id} (or broker-avatar-empty), hot badges (lead-card-{id}-hot) and SLA breach badges (lead-card-{id}-sla-breached); Lead Drawer shows 'Corretor responsável' native <select> dropdown with 'Sem dono (pool)' default — works but missing data-testid='lead-drawer-owner-select' (spec'd in review request). Book Digital quiz-state bug fix verified at code level (BookLayout.jsx uses key={fadeKey} instead of Math.random()). E2E Playwright walk through quiz was blocked by an unrelated UI issue: book-next-btn on página 2 (Empreendimento) was unclickable in headless mode after the first advance — could not reach Capítulo 5/Quiz to runtime-verify the 1/12 → 2/12 → 3/12 increments. Recommend main agent self-test the quiz/simulator advance in a real browser since the code fix is correctly in place.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "LeadDetailDrawer", "issue": "Spec'd data-testid='lead-drawer-owner-select' não está presente no DOM. O dropdown 'Corretor responsável' funciona visualmente mas não tem testid — testes automatizados não conseguem ancorar selectors. Adicionar data-testid no <select> e o botão de desatribuir ('lead-drawer-owner-unassign').", "selector": "lead-drawer-owner-select", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Book Digital — book-next-btn em /empreendimento (página 2 de 8)", "issue": "Em headless Chromium (1280x900) o botão Próximo NÃO avança da página 2 após o primeiro clique, mesmo com force=True. Possível overlay sticky ou condição de visited. Esta iteração não conseguiu rodar Playwright até o Quiz/Simulador. Suspeita: o footer sticky pode estar interceptando clicks ou a CTA muda de label conforme o módulo (e.g., 'Escolher minha casa ideal' obriga uma interação com card antes de habilitar). Pediria ao main agent investigar.", "affected_selectors": ["[data-testid=book-next-btn]"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_release2_brokers.py", "/app/test_reports/pytest/release2.xml"],
+  "action_items": [
+    "Adicionar data-testid='lead-drawer-owner-select' no <select> de Corretor responsável e 'lead-drawer-owner-unassign' no botão de desatribuir (citados nos files_of_reference mas ausentes no DOM).",
+    "Validação manual rápida do bug do Quiz/Simulador no navegador real: Gate → Hub → walk até Capítulo 5 → clicar opção → clicar 'Próxima' → confirmar que avança de 1/12 → 2/12 → 3/12 (não reseta). O fix em BookLayout.jsx (key={fadeKey}) está correto no código, mas não foi possível e2e-verificar via headless.",
+    "Investigar por que book-next-btn fica não-responsivo após a primeira navegação em página 2 (Empreendimento) em headless — pode estar relacionado a algum focus/blur ou um overlay 'Made with Emergent' interceptando.",
+    "Considerar marcar leads com agendamento=null + score<90 + imediato=false explicitamente como NÃO elegíveis a auto-assign (já é o caso, validado por test_cold_lead_NOT_auto_assigned)."
+  ],
+  "critical_code_review_comments": [
+    "routers/brokers.py:80-92 — pick_round_robin_broker usa sort([(leads_count, 1), (created_at, 1)]). Funciona como tie-breaker estável mas NÃO é estritamente round-robin: se um corretor já tem 1 lead e outro tem 0, sempre vai pro de 0 — bom (balanceamento). Validado.",
+    "routers/admin.py:246-249 — admin_update_owner: lógica de decremento/incremento está correta (não decrementa se mesmo broker; idempotente). Valida.",
+    "routers/brokers.py:101-104 — decrement_broker_leads_count usa filtro {'leads_count': {'$gt': 0}} — proteção contra counts negativos, ótimo.",
+    "server.py:336-393 — create_lead: auto_assign acontece ANTES do insert; se o pick_round_robin_broker retornar None (sem corretores ativos), o lead é criado sem dono. Bom fallback. PASS.",
+    "BookLayout.jsx — fix verificado: key={fadeKey} no main. Comentário explica bem porque Math.random() era bug. Excelente documentação inline."
+  ],
+  "updated_files": ["/app/backend/tests/test_release2_brokers.py"],
+  "success_rate": {"backend": "100% (17/17)", "frontend": "85% (admin tudo OK; quiz/simulador e2e blocked, code fix verificado)"},
+  "test_credentials": "Admin: admin@alameda500.com / vILabMQvT59VB-8NW7IclIu4. Public: Maria Teste / 27999990001.",
+  "seed_data_creation": "Criei e removi TEST_Ana Round, TEST_Bruno Round, TEST_Disposable brokers + 4 TEST_Hot leads e 1 TEST_Cold lead durante os testes. Teardown automático limpou TEST_ brokers. Alguns TEST_ leads podem ter ficado na coleção (ok, não bloqueante).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend Release 2 validado 100%. Admin UI Release 2 validado visualmente: aba Corretores, métricas SLA/Sem dono, broker-avatar em cards, sla-breached badges, drawer com select de corretor. Único gap automatizável: adicionar data-testid no select do drawer. Bug do book key={fadeKey} está corretamente fixado em /app/frontend/src/components/book/BookLayout.jsx e App.js passa fadeKey={stage} (linha ~121). Para retestar o quiz manualmente: abrir browser, gate Maria Teste / 27999990001, avançar até Capítulo 5 (perfil), clicar opção + Próxima 3x consecutivas, conferir contador 1/12→2/12→3/12→4/12.",
+  "rca of the issue": "Fix do bug do quiz: BookLayout.jsx antes usava `key={Math.random()}` no <main> com classe `fade-up`. Cada re-render gerava um novo key → React desmontava e remontava todos os filhos → componentes filhos (Quiz, Simulador) perdiam seu state local (currentQuestionIndex, formData). Resultado: ao clicar 'Próxima' no Quiz, o pai re-renderizava, gerava novo Math.random key, e o Quiz remontava em currentQuestionIndex=0 (reset visual: 1/12 → 1/12). Fix: key={fadeKey} onde fadeKey é a stage atual (passada por App.js linha ~121). Agora o remount só ocorre quando muda de capítulo, não a cada clique. Estado interno do Quiz/Simulador persiste entre option-clicks e next-clicks. Validado no código — não foi possível e2e-verificar via Playwright porque o book-next-btn fica não-responsivo em página 2 (Empreendimento) no headless, problema separado e não-bloqueante para o fix."
+}

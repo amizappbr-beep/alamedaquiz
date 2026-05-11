@@ -118,7 +118,7 @@ function Router() {
   // competindo na mesma tela.
   const noFooterStages = new Set(["perfil", "simulador"]);
   return (
-    <BookLayout hideFooter={noFooterStages.has(stage)}>{content}</BookLayout>
+    <BookLayout hideFooter={noFooterStages.has(stage)} fadeKey={stage}>{content}</BookLayout>
   );
 }
 

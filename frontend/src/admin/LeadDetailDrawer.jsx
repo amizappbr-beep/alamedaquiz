@@ -52,13 +52,14 @@ const REGIAO_LABEL = {
   qualquer: "Qualquer",
 };
 
-export default function LeadDetailDrawer({ leadId, onClose, onStatusChanged }) {
+export default function LeadDetailDrawer({ leadId, onClose, onStatusChanged, brokers = [], onOwnerChanged }) {
   const { axiosAdmin } = useAdmin();
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
   const [noteText, setNoteText] = useState("");
   const [savingNote, setSavingNote] = useState(false);
   const [savingStatus, setSavingStatus] = useState(false);
+  const [savingOwner, setSavingOwner] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,6 +87,25 @@ export default function LeadDetailDrawer({ leadId, onClose, onStatusChanged }) {
       onStatusChanged?.(lead.id, next);
     } finally {
       setSavingStatus(false);
+    }
+  };
+
+  const updateOwner = async (brokerId) => {
+    if (!lead) return;
+    if ((brokerId || null) === (lead.owner_broker_id || null)) return;
+    setSavingOwner(true);
+    try {
+      const { data } = await axiosAdmin.patch(`/admin/leads/${lead.id}/owner`, {
+        broker_id: brokerId || null,
+      });
+      setLead((l) => ({
+        ...l,
+        owner_broker_id: data.owner_broker_id,
+        owner_broker_name: data.owner_broker_name,
+      }));
+      onOwnerChanged?.(lead.id, data.owner_broker_id, data.owner_broker_name);
+    } finally {
+      setSavingOwner(false);
     }
   };
 
@@ -218,6 +238,50 @@ export default function LeadDetailDrawer({ leadId, onClose, onStatusChanged }) {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Owner (Corretor responsável) */}
+            <div className="mt-5" data-testid="lead-drawer-owner-section">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="text-[11px] uppercase tracking-[0.22em]" style={{ color: "var(--torres-muted)" }}>
+                  Corretor responsável
+                </div>
+                {lead.owner_broker_id && (
+                  <button
+                    type="button"
+                    onClick={() => updateOwner(null)}
+                    disabled={savingOwner}
+                    data-testid="lead-drawer-owner-unassign"
+                    className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 hover:text-red-600 disabled:opacity-50"
+                  >
+                    Remover
+                  </button>
+                )}
+              </div>
+              {brokers.length === 0 ? (
+                <div
+                  className="rounded-xl border border-dashed border-[color:var(--torres-line)] p-3 text-xs italic"
+                  style={{ color: "var(--torres-muted)" }}
+                >
+                  Nenhum corretor cadastrado. Vá em "Corretores" para começar a
+                  atribuir leads.
+                </div>
+              ) : (
+                <select
+                  value={lead.owner_broker_id || ""}
+                  onChange={(e) => updateOwner(e.target.value || null)}
+                  disabled={savingOwner}
+                  data-testid="lead-drawer-owner-select"
+                  className="w-full rounded-xl border border-[color:var(--torres-line)] bg-white px-3 py-2.5 text-sm outline-none transition-all focus:border-[color:var(--torres-indigo)] focus:ring-2 focus:ring-[color:var(--torres-indigo)]/15"
+                >
+                  <option value="">— Sem dono (pool) —</option>
+                  {brokers.map((b) => (
+                    <option key={b.id} value={b.id} disabled={!b.active}>
+                      {b.name} {b.active ? `(${b.leads_count} leads)` : "(inativo)"}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             {/* Scoring */}

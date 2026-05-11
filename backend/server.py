@@ -75,6 +75,7 @@ class LeadCreate(BaseModel):
     interacoes: List[Interacao] = Field(default_factory=list)
     tempo_total_segundos: int = 0
     origem: Optional[str] = None
+    channel: Optional[Literal["direto", "indicacao", "imobiliaria", "campanha"]] = "direto"
 
 
 class NutricaoWarehouse(BaseModel):
@@ -109,6 +110,9 @@ class Lead(BaseModel):
     temperatura: str = "frio"
     origem: Optional[str] = None
     status: str = "novo"  # Kanban: novo|contatado|agendado|negociacao|ganho|perdido
+    channel: str = "direto"  # direto|indicacao|imobiliaria|campanha
+    owner_broker_id: Optional[str] = None
+    owner_broker_name: Optional[str] = None
     nutricao_warehouse: Optional[NutricaoWarehouse] = None
     admin_notes: List[Dict[str, Any]] = Field(default_factory=list)
     status_history: List[Dict[str, Any]] = Field(default_factory=list)
@@ -356,7 +360,27 @@ async def create_lead(payload: LeadCreate):
         lead_score=score,
         temperatura=temperatura,
         origem=payload.origem,
+        channel=payload.channel or "direto",
     )
+
+    # Round-robin auto-assignment for hot leads (score >= 90 OR atendimento
+    # imediato OR agendou visita). Cold/warm leads stay unowned so the team
+    # can pull manually from the Kanban.
+    auto_assign = (
+        score >= 90
+        or payload.solicita_atendimento_imediato
+        or payload.agendamento is not None
+    )
+    if auto_assign:
+        from routers.brokers import (
+            pick_round_robin_broker,
+            increment_broker_leads_count,
+        )
+        broker = await pick_round_robin_broker(db)
+        if broker:
+            lead.owner_broker_id = broker["id"]
+            lead.owner_broker_name = broker["name"]
+            await increment_broker_leads_count(db, broker["id"])
 
     doc = lead.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
@@ -509,8 +533,10 @@ app.include_router(api_router)
 
 # ---- Admin routes (protected by JWT) ----
 from routers.admin import router as admin_router  # noqa: E402
+from routers.brokers import router as brokers_router  # noqa: E402
 api_router_admin = APIRouter(prefix="/api")
 api_router_admin.include_router(admin_router)
+api_router_admin.include_router(brokers_router)
 app.include_router(api_router_admin)
 
 # Expose db to admin routes via app.state
@@ -542,6 +568,9 @@ async def _on_startup():
         await db.leads.create_index([("created_at", -1)])
         await db.leads.create_index("status")
         await db.leads.create_index("temperatura")
+        await db.leads.create_index("owner_broker_id")
+        await db.brokers.create_index("id", unique=True)
+        await db.brokers.create_index("active")
         logger.info("Admin seeded + indexes ensured.")
     except Exception as exc:
         logger.exception("Startup init failed: %s", exc)

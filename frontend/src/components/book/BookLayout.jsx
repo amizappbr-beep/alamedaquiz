@@ -14,11 +14,18 @@ export default function BookLayout({
   children,
   hideHeader = false,
   hideFooter = false,
+  fadeKey,
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-[color:var(--torres-cream)]" data-testid="book-layout">
       {!hideHeader && <BookHeader />}
-      <main className="fade-up flex-1" key={Math.random() /* trigger fade on each mount */}>
+      {/*
+        `fadeKey` é usado apenas para reiniciar a animação `fade-up` quando o
+        capítulo muda. NUNCA use `Math.random()` aqui — isso faria o React
+        desmontar/remontar todos os filhos a cada render, resetando o estado
+        local (ex: passo atual do Quiz e Simulador).
+      */}
+      <main className="fade-up flex-1" key={fadeKey}>
         {children}
       </main>
       {!hideFooter && <BookFooter />}

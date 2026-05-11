@@ -91,19 +91,25 @@ export default function MetricsHeader({ metrics, onLogout, onRefresh, hotLeadsCo
             testid="admin-metric-hot"
           />
           <Tile label="Em análise" value={temp.morno ?? 0} color="#d97706" />
-          <Tile label="Explorando" value={temp.frio ?? 0} color="#64748b" />
           <Tile label="Agendados" value={metrics?.agendamentos ?? 0} />
-          <Tile label="Simularam" value={metrics?.com_simulacao ?? 0} />
+          <Tile
+            label="Sem dono"
+            value={metrics?.leads_sem_dono ?? 0}
+            color="#0ea5e9"
+            testid="admin-metric-unassigned"
+          />
+          <Tile
+            label="SLA atrasado"
+            value={metrics?.sla_atrasados ?? 0}
+            color={metrics?.sla_atrasados > 0 ? "#dc2626" : "#64748b"}
+            pulse={metrics?.sla_atrasados > 0}
+            testid="admin-metric-sla"
+          />
           <Tile
             label="Em nutrição"
             value={metrics?.em_nutricao ?? 0}
             color="#059669"
             testid="admin-metric-warehouse"
-          />
-          <Tile
-            label="Score médio"
-            value={metrics?.score_medio ?? "—"}
-            suffix={metrics?.score_medio ? "/150" : ""}
           />
         </div>
 

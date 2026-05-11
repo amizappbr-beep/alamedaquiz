@@ -59,6 +59,10 @@ class StatusUpdatePayload(BaseModel):
     status: LeadStatusLiteral
 
 
+class OwnerUpdatePayload(BaseModel):
+    broker_id: Optional[str] = None  # None = unassign
+
+
 class NotePayload(BaseModel):
     text: str = Field(..., min_length=1, max_length=2000)
 
@@ -129,6 +133,8 @@ async def admin_list_leads(
     status: Optional[LeadStatusLiteral] = None,
     temperatura: Optional[Literal["quente", "morno", "frio"]] = None,
     nutricao: Optional[bool] = None,  # True = só leads em nutrição
+    owner: Optional[str] = None,  # broker_id ou "unassigned"
+    channel: Optional[Literal["direto", "indicacao", "imobiliaria", "campanha"]] = None,
     q: Optional[str] = None,
     limit: int = 500,
 ):
@@ -142,6 +148,12 @@ async def admin_list_leads(
         query["nutricao_warehouse"] = {"$ne": None}
     elif nutricao is False:
         query["nutricao_warehouse"] = None
+    if owner == "unassigned":
+        query["owner_broker_id"] = None
+    elif owner:
+        query["owner_broker_id"] = owner
+    if channel:
+        query["channel"] = channel
     if q:
         q_re = {"$regex": q.strip(), "$options": "i"}
         query["$or"] = [{"name": q_re}, {"phone": q_re}, {"email": q_re}]
@@ -154,6 +166,9 @@ async def admin_list_leads(
     # Default status = "novo" for legacy leads without it.
     for lead in leads:
         lead.setdefault("status", "novo")
+        lead.setdefault("channel", "direto")
+        lead.setdefault("owner_broker_id", None)
+        lead.setdefault("owner_broker_name", None)
     return leads
 
 
@@ -196,6 +211,68 @@ async def admin_update_status(
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Lead não encontrado.")
     return {"ok": True, "status": payload.status}
+
+
+@router.patch("/leads/{lead_id}/owner")
+async def admin_update_owner(
+    lead_id: str,
+    payload: OwnerUpdatePayload,
+    request: Request,
+    current=Depends(get_current_admin),
+):
+    """Assign or unassign a broker to a lead. Updates the broker leads_count
+    counters so the round-robin distribution stays balanced.
+    """
+    from routers.brokers import (
+        increment_broker_leads_count,
+        decrement_broker_leads_count,
+    )
+    db = get_db(request)
+    lead = await db.leads.find_one({"id": lead_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead não encontrado.")
+
+    new_owner = None
+    if payload.broker_id:
+        new_owner = await db.brokers.find_one(
+            {"id": payload.broker_id}, {"_id": 0}
+        )
+        if not new_owner:
+            raise HTTPException(status_code=404, detail="Corretor não encontrado.")
+        if not new_owner.get("active", True):
+            raise HTTPException(status_code=400, detail="Corretor inativo.")
+
+    old_owner_id = lead.get("owner_broker_id")
+    if old_owner_id and old_owner_id != payload.broker_id:
+        await decrement_broker_leads_count(db, old_owner_id)
+    if new_owner and old_owner_id != new_owner["id"]:
+        await increment_broker_leads_count(db, new_owner["id"])
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    await db.leads.update_one(
+        {"id": lead_id},
+        {
+            "$set": {
+                "owner_broker_id": new_owner["id"] if new_owner else None,
+                "owner_broker_name": new_owner["name"] if new_owner else None,
+                "updated_at": now_iso,
+            },
+            "$push": {
+                "status_history": {
+                    "tag": "owner_changed",
+                    "owner_id": new_owner["id"] if new_owner else None,
+                    "owner_name": new_owner["name"] if new_owner else None,
+                    "by": current["email"],
+                    "at": now_iso,
+                }
+            },
+        },
+    )
+    return {
+        "ok": True,
+        "owner_broker_id": new_owner["id"] if new_owner else None,
+        "owner_broker_name": new_owner["name"] if new_owner else None,
+    }
 
 
 @router.post("/leads/{lead_id}/notes")
@@ -343,9 +420,29 @@ async def admin_metrics(request: Request, current=Depends(get_current_admin)):
     avg_score = round(score_stats[0]["avg"], 1) if score_stats else 0
     max_score = score_stats[0]["max"] if score_stats else 0
 
-    # Last 7 days count
+    # SLA tracking: leads "novo" há mais de 60 min sem contato são "atrasados".
+    # Leads "contatado" sem agendamento há mais de 24h também entram.
     from datetime import timedelta as _td
-    seven_days_ago = (datetime.now(timezone.utc) - _td(days=7)).isoformat()
+    now_utc = datetime.now(timezone.utc)
+    sla_novo_threshold = (now_utc - _td(minutes=60)).isoformat()
+    sla_contatado_threshold = (now_utc - _td(hours=24)).isoformat()
+    sla_atrasados = await db.leads.count_documents(
+        {
+            "$or": [
+                {"status": "novo", "created_at": {"$lt": sla_novo_threshold}},
+                {"status": "contatado", "updated_at": {"$lt": sla_contatado_threshold}},
+            ]
+        }
+    )
+
+    # Brokers summary
+    brokers_ativos = await db.brokers.count_documents({"active": True})
+    leads_sem_dono = await db.leads.count_documents(
+        {"owner_broker_id": None, "status": {"$nin": ["ganho", "perdido"]}}
+    )
+
+    # Last 7 days count
+    seven_days_ago = (now_utc - _td(days=7)).isoformat()
     ultimos_7d = await db.leads.count_documents({"created_at": {"$gte": seven_days_ago}})
 
     return {
@@ -360,4 +457,7 @@ async def admin_metrics(request: Request, current=Depends(get_current_admin)):
         "em_nutricao": em_nutricao,
         "score_medio": avg_score,
         "score_maximo": max_score,
+        "sla_atrasados": sla_atrasados,
+        "brokers_ativos": brokers_ativos,
+        "leads_sem_dono": leads_sem_dono,
     }
