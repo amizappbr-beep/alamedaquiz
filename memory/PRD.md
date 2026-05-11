@@ -40,19 +40,41 @@ Criar uma landing page interativa / concierge digital para o empreendimento "Res
 - Espelho dinâmico da proposta em tempo real
 - Validação servidor + frontend
 
-### 🔴 Fase 3 — CRM Embutido ✅ (CONCLUÍDO — 2026-02)
+### 🔴 Fase 3 — CRM Embutido ✅ (Release 1 + 2 CONCLUÍDOS)
+
+**Release 1 (2026-02):**
 - `/admin` com login (JWT custom, email+senha)
 - Kanban: Novo → Contatado → Agendado → Em Negociação → Ganho/Perdido
 - Detalhe do lead: perfil, quiz, simulação, módulos, timeline
 - Filtros (temperatura, módulos completos, com simulação, agendou, etc.)
 - Notificação visual/sonora para leads quentes
 - Refatoração: separar rotas admin em router próprio
+- Lead Warehouse (captura de nutrição multi-empreendimento)
+- Certificado de exploração via html2canvas
+- Refator UX para "Book Digital" paginado
+
+**Release 2 (2026-02-11):**
+- Brokers/Corretores entity + CRUD `/api/admin/brokers`
+- Round-robin auto-assign de leads quentes (score ≥ 90 OU imediato OU agendamento)
+- Ownership manual via `PATCH /api/admin/leads/{id}/owner` (idempotente, mantém counters)
+- Canais de venda: `direto | indicacao | imobiliaria | campanha`
+- SLA visual: badges Atrasado/Atenção no Kanban + métrica `sla_atrasados` no header
+- Nova aba "Corretores" no admin com cards, toggle Pausar/Reativar, Remover (desatribui leads)
+- Avatar circular com iniciais nos lead cards + dropdown de corretor no Lead Drawer
 
 ---
 
 ## Changelog (o que foi implementado, com datas)
 
-### 2026-02 Fork (sessão atual)
+### 2026-02-11 (sessão atual)
+- **P0 fix — Quiz/Simulador resetando**: `BookLayout.jsx` usava `key={Math.random()}` no `<main>`, forçando remount a cada render do pai. Substituído por `key={fadeKey}` onde `fadeKey={stage}` é passado por App.js — agora o remount só ocorre quando troca de capítulo. Validado E2E: Quiz avança 1/12 → 2/12 → 3/12 corretamente.
+- **CRM Release 2 — Sales Channels + Ownership**:
+  - Backend: novo `routers/brokers.py` (CRUD + `pick_round_robin_broker` + counter helpers); `PATCH /admin/leads/{id}/owner` no admin router; filtros `?owner=` e `?channel=` em `/admin/leads`; novas métricas `sla_atrasados`, `brokers_ativos`, `leads_sem_dono` em `/admin/metrics`.
+  - Frontend: aba "Corretores" no admin (`BrokersView.jsx`), `BrokerAvatar.jsx`, dropdown de corretor no Lead Drawer, badges de SLA visual (Atrasado/Atenção) nos lead cards, tiles "Sem dono" e "SLA atrasado" no header.
+  - Lead model: campos novos `channel`, `owner_broker_id`, `owner_broker_name`.
+  - Backend tests (testing agent): 17/17 PASS.
+
+### 2026-02 Fork (sessão anterior)
 - **Hero do Hub** ganhou imagem "FACHADA PRINCIPAL NOTURNA" com gradiente dark para legibilidade
 - **Scroll-to-top** centralizado em `App.js` via `useLayoutEffect + requestAnimationFrame` duplo; funciona em iOS Safari e Android Chrome
 - **`ModuleFooterCTA`** — componente compartilhado usado nos módulos Empreendimento, Casas, Diferenciais e Localização: CTA primário + "Ou fale direto com um corretor" (WhatsApp imediato OU Agendar)
@@ -76,11 +98,18 @@ Criar uma landing page interativa / concierge digital para o empreendimento "Res
 
 ### P0 (todos concluídos na sessão atual)
 
-### P1
+### P1 — Próximas releases do CRM
+- **Release 3 — Campanhas + Ações Sazonais**: mass dispatch via WhatsApp (Z-API/Twilio) ou Email para os leads do Warehouse, segmentado por faixa/momento/região
+- **Release 4 — Propostas + Contratos + Assinatura Eletrônica** (Clicksign)
+- **Release 5 — Analytics & ROI**: UTM tracking, VSO (Velocidade de Vendas Operacional), funil de conversão, dashboards por canal
+- **Release 6 — Calendário unificado** (Google Calendar) + Pós-venda/NPS
+
+### P1 — Melhorias gerais
 - **Toast global "Posso te ajudar agora?"** após 90s de inatividade em qualquer módulo
 - **Confirmação pós-agendamento pelo WhatsApp do próprio usuário** (fecha ciclo de confiança)
-- **Multi-admin**: evoluir seed → registration de corretores; adicionar X-Forwarded-For no identifier do rate-limit
+- **Multi-admin**: evoluir seed → registration de corretores admin (separado dos brokers/corretores comerciais); adicionar X-Forwarded-For no identifier do rate-limit
 - **status_history.from**: hoje não persiste o valor anterior no PATCH status
+- **Notificação ao corretor responsável**: quando lead é auto-atribuído, disparar WhatsApp/email pro broker dono
 
 ### P2
 - Copy mais contextual nos CTAs "Próximo passo" por módulo
