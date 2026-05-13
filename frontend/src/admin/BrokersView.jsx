@@ -13,6 +13,7 @@ import {
   Mail,
   X,
   Check,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -155,6 +156,164 @@ export default function BrokersView() {
           creating={creating}
           setCreating={setCreating}
         />
+      )}
+
+      {/* Zona de perigo — zerar dados de teste antes de ir para produção */}
+      <DangerZone onCleared={() => setBrokers([])} />
+    </div>
+  );
+}
+
+function DangerZone({ onCleared }) {
+  const { axiosAdmin } = useAdmin();
+  const [open, setOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const canConfirm = confirmText === "APAGAR TUDO";
+
+  const reset = async () => {
+    if (!canConfirm) return;
+    setSubmitting(true);
+    try {
+      const { data } = await axiosAdmin.post("/admin/reset", {
+        confirmacao: "APAGAR TUDO",
+      });
+      const apagados = data.apagados || {};
+      const leads = apagados.leads ?? 0;
+      const brokers = apagados.brokers ?? 0;
+      toast.success(
+        `Banco zerado: ${leads} leads + ${brokers} corretores apagados.`,
+        { duration: 6000 }
+      );
+      onCleared?.();
+      setOpen(false);
+      setConfirmText("");
+      // Recarrega a página para refletir métricas e Kanban
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      toast.error(
+        err.response?.data?.detail || "Falha ao zerar — tente novamente."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      data-testid="danger-zone"
+      className="mt-12 rounded-3xl border-2 border-dashed border-red-200 bg-red-50/30 p-5 sm:p-6"
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-700">
+          <AlertTriangle className="h-5 w-5" />
+        </div>
+        <div className="flex-1">
+          <div
+            className="serif text-base font-semibold sm:text-lg"
+            style={{ color: "var(--torres-ink)" }}
+          >
+            Zona de perigo
+          </div>
+          <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--torres-muted)" }}>
+            Apaga <strong>todos os leads</strong> e <strong>todos os corretores</strong> deste
+            ambiente. Útil antes de ir para produção, para começar com base
+            limpa. Seu login de admin <strong>NÃO é afetado</strong>.
+          </p>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            data-testid="danger-zone-open-btn"
+            className="mt-4 inline-flex items-center gap-2 rounded-full border-2 border-red-300 bg-white px-5 py-2.5 text-xs font-semibold text-red-700 transition-all hover:bg-red-100"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Zerar leads e corretores
+          </button>
+        </div>
+      </div>
+
+      {open && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+            onClick={() => !submitting && setOpen(false)}
+            data-testid="danger-zone-modal-overlay"
+          />
+          <div
+            className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-3xl border-2 border-red-200 bg-white p-6 shadow-2xl"
+            data-testid="danger-zone-modal"
+          >
+            <div className="flex items-center justify-between">
+              <h3
+                className="serif text-lg font-semibold"
+                style={{ color: "var(--torres-ink)" }}
+              >
+                Confirmar zerar dados?
+              </h3>
+              <button
+                onClick={() => !submitting && setOpen(false)}
+                disabled={submitting}
+                data-testid="danger-zone-modal-close"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--torres-line)] text-[color:var(--torres-muted)] hover:border-red-300 hover:text-red-600 disabled:opacity-50"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="mt-4 rounded-2xl border-2 border-red-200 bg-red-50 p-4 text-xs text-red-900">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <strong>Atenção:</strong> esta ação é <strong>irreversível</strong>. Todos os
+                  leads (incluindo os do Lead Warehouse) e todos os corretores
+                  cadastrados serão apagados permanentemente.
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label
+                className="mb-2 block text-[10px] uppercase tracking-[0.22em]"
+                style={{ color: "var(--torres-muted)" }}
+              >
+                Para confirmar, digite a frase: <strong style={{ color: "var(--torres-ink)" }}>APAGAR TUDO</strong>
+              </label>
+              <input
+                type="text"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="APAGAR TUDO"
+                autoFocus
+                data-testid="danger-zone-confirm-input"
+                className="w-full rounded-xl border-2 border-[color:var(--torres-line)] bg-white px-3 py-2.5 text-sm font-mono tracking-wider outline-none transition-all focus:border-red-500 focus:ring-2 focus:ring-red-500/15"
+              />
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                disabled={submitting}
+                className="rounded-full border border-[color:var(--torres-line)] bg-white px-4 py-2 text-xs font-semibold text-[color:var(--torres-ink)] hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={reset}
+                disabled={!canConfirm || submitting}
+                data-testid="danger-zone-confirm-btn"
+                className="inline-flex items-center gap-2 rounded-full bg-red-600 px-5 py-2 text-xs font-semibold text-white transition-all hover:bg-red-700 disabled:opacity-50"
+              >
+                {submitting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
+                {submitting ? "Apagando..." : "Apagar tudo"}
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
