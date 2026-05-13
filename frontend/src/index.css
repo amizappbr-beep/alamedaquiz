@@ -171,6 +171,48 @@ code {
     transform: translateY(0);
 }
 
+/* "Vire a página" — chama atenção do usuário pro botão Próximo do Book.
+   Pulsação suave + halo expansivo que reforça o gesto de avançar página. */
+@keyframes book-next-pulse {
+    0%, 100% {
+        box-shadow:
+            0 12px 28px -12px rgba(100, 113, 162, 0.55),
+            0 0 0 0 rgba(100, 113, 162, 0.45);
+    }
+    50% {
+        box-shadow:
+            0 16px 32px -10px rgba(100, 113, 162, 0.65),
+            0 0 0 10px rgba(100, 113, 162, 0);
+    }
+}
+@keyframes book-next-arrow-slide {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(4px); }
+}
+.book-next-attention {
+    animation: book-next-pulse 2.2s ease-in-out infinite;
+}
+.book-next-attention .book-next-arrow {
+    animation: book-next-arrow-slide 1.8s ease-in-out infinite;
+}
+.book-next-attention:hover {
+    animation-play-state: paused;
+}
+.book-next-attention:hover .book-next-arrow {
+    animation-play-state: paused;
+}
+
+/* Hint "vire a página" — texto leve em cima do botão para acostumar
+   o usuário ao formato livro digital. Aparece apenas nas 2 primeiras
+   páginas (capa + empreendimento) via prop. */
+@keyframes book-hint-bounce {
+    0%, 100% { transform: translateY(0); opacity: 0.85; }
+    50% { transform: translateY(-3px); opacity: 1; }
+}
+.book-next-hint {
+    animation: book-hint-bounce 1.6s ease-in-out infinite;
+}
+
 /* Quiz option card */
 .quiz-option {
     background: #fff;

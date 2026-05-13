@@ -196,12 +196,28 @@ export default function Hub() {
         </div>
 
         {/* Lead Warehouse — captura sazonal/futura */}
-        <div className="mt-8">
+        <div className="mt-8" data-testid="hub-warehouse-section">
+          {/* Linha-âncora visualmente destacada para chamar atenção:
+              "Esse não é o seu lar? A Torres tem mais." */}
+          <div
+            className="mb-3 flex items-center gap-3"
+            aria-hidden
+          >
+            <div className="h-px flex-1 bg-[color:var(--torres-line)]" />
+            <span
+              className="text-[11px] uppercase tracking-[0.22em]"
+              style={{ color: "var(--torres-indigo)" }}
+            >
+              ✦ Exclusivo para quem busca mais
+            </span>
+            <div className="h-px flex-1 bg-[color:var(--torres-line)]" />
+          </div>
           <WarehouseCaptureCard
             source="capa"
             requireContact
-            title="Não é o momento certo? Sem problema."
-            subtitle="A Torres tem outros empreendimentos a caminho. Diga o que faz sentido pra você e te avisamos quando lançar algo compatível."
+            defaultOpen
+            title="O Alameda 500 não é seu perfil? A Torres tem mais a caminho."
+            subtitle="Cadastre-se para receber em primeira mão e com exclusividade lançamentos compatíveis com você — antes de chegarem ao mercado. Pode ser casa, apartamento ou em outra região."
           />
         </div>
 

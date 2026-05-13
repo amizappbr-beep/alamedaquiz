@@ -6,13 +6,17 @@ import {
   getNextStage,
   getPrevStage,
 } from "../../lib/bookPages";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Hand } from "lucide-react";
 import { toast } from "sonner";
 
 /**
  * Footer fixo do Book: ← Anterior | Próxima etapa →
  * Ao avançar, registra a visita do módulo atual e dispara um toast de
  * recompensa com os pontos ganhos.
+ *
+ * O botão "Próximo" recebe atenção visual (pulso + seta animada) nas
+ * primeiras páginas para acostumar o usuário com o formato livro digital
+ * — um padrão ainda incomum no mercado imobiliário.
  */
 export default function BookFooter() {
   const { stage, goTo, markModuloVisitado, modulos_visitados } = useJourney();
@@ -23,19 +27,34 @@ export default function BookFooter() {
 
   if (!nextStage && !prevStage) return null; // capa não tem prev, última não tem next; mas raríssimo
 
+  const nextPage = nextStage ? getBookPage(nextStage) : null;
+  // A próxima página desbloqueia o corretor? (i.e., a página atual é a
+  // anterior ao gatilho de unlocksBroker — atualmente "empreendimento").
+  const nextUnlocksBroker = !!nextPage?.unlocksBroker;
+  // Mostrar pulso + dica visual nas 2 primeiras páginas para acostumar
+  // o usuário ao formato "livro digital".
+  const isEarlyPage = current.number <= 2;
+
   const handleNext = () => {
     // marca o módulo atual como visitado (exceto a capa)
     if (current.stage !== "hub") {
       const wasVisited = modulos_visitados.includes(current.stage);
       markModuloVisitado(current.stage);
       if (!wasVisited && current.rewardPts) {
+        let description;
+        if (current.unlocksBroker) {
+          description = "🔓 Corretor liberado — agora você pode falar quando quiser.";
+        } else if (nextUnlocksBroker) {
+          // Antes de virar a página que libera o corretor
+          description = `🔓 Você poderá acionar seu corretor assim que virar a próxima página · Próxima: ${nextPage.label}`;
+        } else {
+          description = `Próxima: ${nextPage.label}`;
+        }
         toast.success(
           `Etapa ${current.number} concluída · +${current.rewardPts} pontos`,
           {
-            description: current.unlocksBroker
-              ? "🔓 Corretor liberado — agora você pode falar quando quiser."
-              : `Próxima: ${getBookPage(nextStage).label}`,
-            duration: 3200,
+            description,
+            duration: nextUnlocksBroker ? 4200 : 3200,
           }
         );
       }
@@ -46,8 +65,6 @@ export default function BookFooter() {
   const handlePrev = () => {
     if (prevStage) goTo(prevStage);
   };
-
-  const nextPage = nextStage ? getBookPage(nextStage) : null;
 
   return (
     <nav
@@ -78,14 +95,29 @@ export default function BookFooter() {
 
         {/* Próximo — ATAQUE PRINCIPAL */}
         {nextStage ? (
-          <button
-            onClick={handleNext}
-            data-testid="book-next-btn"
-            className="btn-primary-torres group relative inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:px-6 sm:py-3 sm:text-sm"
-          >
-            <span>{current.nextLabel || `Ir para ${nextPage?.label}`}</span>
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </button>
+          <div className="relative flex flex-col items-end gap-1 sm:items-stretch">
+            {/* Dica "vire a página" — só nas 2 primeiras páginas */}
+            {isEarlyPage && (
+              <div
+                data-testid="book-next-hint"
+                className="book-next-hint pointer-events-none flex items-center justify-end gap-1 text-[10px] font-semibold uppercase tracking-[0.22em]"
+                style={{ color: "var(--torres-indigo)" }}
+              >
+                <Hand className="h-3 w-3" />
+                Vire a página
+              </div>
+            )}
+            <button
+              onClick={handleNext}
+              data-testid="book-next-btn"
+              className={`btn-primary-torres group relative inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:px-6 sm:py-3 sm:text-sm ${
+                isEarlyPage ? "book-next-attention" : ""
+              }`}
+            >
+              <span>{current.nextLabel || `Ir para ${nextPage?.label}`}</span>
+              <ArrowRight className="book-next-arrow h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </button>
+          </div>
         ) : (
           <span
             className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700"

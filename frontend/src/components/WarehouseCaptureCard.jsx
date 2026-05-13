@@ -58,9 +58,10 @@ export default function WarehouseCaptureCard({
   title = "Não é o momento certo? Sem problema.",
   subtitle = "Diga o que faz sentido pra você e a Torres te avisa quando lançar algo compatível.",
   requireContact = false,
+  defaultOpen = false,
 }) {
   const { name: ctxName, phone: ctxPhone } = useJourney();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -157,7 +158,7 @@ export default function WarehouseCaptureCard({
   return (
     <div
       data-testid={`warehouse-card-${source}`}
-      className="overflow-hidden rounded-3xl border border-[color:var(--torres-line)] bg-white"
+      className="overflow-hidden rounded-3xl border-2 border-[color:var(--torres-indigo)]/25 bg-gradient-to-br from-[color:var(--torres-indigo)]/8 via-white to-emerald-50/30 shadow-[0_18px_46px_-18px_rgba(100,113,162,0.35)]"
     >
       {/* Header — clicável para abrir o formulário */}
       <button
@@ -168,16 +169,25 @@ export default function WarehouseCaptureCard({
       >
         <div className="flex items-start gap-3">
           <div
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-md"
             style={{ backgroundColor: "var(--torres-indigo)", color: "#fff" }}
           >
-            <Bell className="h-5 w-5" />
+            <Bell className="h-6 w-6" />
           </div>
           <div>
-            <div className="serif text-base font-semibold sm:text-lg" style={{ color: "var(--torres-ink)" }}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700"
+                aria-hidden
+              >
+                <Sparkles className="h-2.5 w-2.5" />
+                Acesso antecipado
+              </span>
+            </div>
+            <div className="serif mt-1 text-base font-semibold sm:text-lg" style={{ color: "var(--torres-ink)" }}>
               {title}
             </div>
-            <p className="mt-0.5 text-xs sm:text-sm" style={{ color: "var(--torres-muted)" }}>
+            <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--torres-muted)" }}>
               {subtitle}
             </p>
           </div>

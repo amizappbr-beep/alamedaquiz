@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useJourney } from "../../context/JourneyContext";
 import { CASA_MODELOS, sugerirCasa } from "../../lib/conteudo";
 import { PRECO_MODELO, UNIDADES, formatBRL } from "../../lib/tabelaVendas";
-import { Check, Sparkles, Ruler, Square, Bed, X } from "lucide-react";
+import { Check, Sparkles, Ruler, Square, Bed, X, ArrowRight, Trophy } from "lucide-react";
 
 export default function ModuloCasas() {
   const { goTo, setCasaPreferida, casa_preferida, quiz_answers } =
@@ -59,13 +59,24 @@ export default function ModuloCasas() {
                 key={m.id}
                 onClick={() => setCasaPreferida(m.id)}
                 data-testid={`casa-card-${m.id}`}
-                className={`group relative flex flex-col overflow-hidden rounded-3xl border bg-white text-left transition-all duration-300 fade-up ${
+                aria-pressed={selected}
+                className={`group relative flex flex-col overflow-hidden rounded-3xl border-2 bg-white text-left transition-all duration-300 fade-up ${
                   selected
-                    ? "border-[color:var(--torres-indigo)] shadow-[0_25px_60px_-25px_rgba(100,113,162,0.55)]"
+                    ? "border-[color:var(--torres-indigo)] ring-4 ring-[color:var(--torres-indigo)]/20 shadow-[0_30px_70px_-25px_rgba(100,113,162,0.65)] -translate-y-1"
                     : "border-[color:var(--torres-line)] hover:-translate-y-1 hover:border-[color:var(--torres-indigo)]/60"
                 }`}
                 style={{ animationDelay: `${idx * 80}ms` }}
               >
+                {/* Selo grande quando selecionado — visível imediatamente */}
+                {selected && (
+                  <div
+                    data-testid={`casa-selected-badge-${m.id}`}
+                    className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full bg-[color:var(--torres-indigo)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white shadow-lg"
+                  >
+                    <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                    Sua escolha
+                  </div>
+                )}
                 {/* Image */}
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img
@@ -206,6 +217,46 @@ export default function ModuloCasas() {
             );
           })}
         </div>
+
+        {/* Reforço pós-escolha: aparece quando o usuário marca uma casa.
+            Reduz a ambiguidade ("é só clicar no card?") e empurra pro
+            próximo capítulo. */}
+        {casa_preferida && (
+          <div
+            data-testid="casa-escolha-reforco"
+            className="fade-up mt-8 overflow-hidden rounded-3xl border-2 border-[color:var(--torres-indigo)]/30 bg-gradient-to-br from-[color:var(--torres-indigo)]/10 via-white to-[color:var(--torres-indigo)]/5 p-5 sm:p-6"
+          >
+            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+                  style={{ backgroundColor: "var(--torres-indigo)", color: "#fff" }}
+                  aria-hidden
+                >
+                  <Trophy className="h-5 w-5" strokeWidth={2.2} />
+                </div>
+                <div>
+                  <div className="serif text-base font-semibold sm:text-lg" style={{ color: "var(--torres-ink)" }}>
+                    Casa {CASA_MODELOS.find((c) => c.id === casa_preferida)?.nome} é a sua escolha 👏
+                  </div>
+                  <div className="mt-0.5 text-sm" style={{ color: "var(--torres-muted)" }}>
+                    Quer descobrir como ela cabe no seu bolso? No próximo capítulo
+                    você simula a proposta — sem cadastro, sem compromisso.
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => goTo("diferenciais")}
+                data-testid="casa-avancar-diferenciais"
+                className="btn-primary-torres group inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs sm:px-6 sm:py-3 sm:text-sm whitespace-nowrap"
+              >
+                Continuar minha jornada
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Planta lightbox */}

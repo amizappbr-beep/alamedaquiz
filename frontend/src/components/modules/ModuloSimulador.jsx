@@ -166,13 +166,37 @@ export default function ModuloSimulador() {
             className="serif mt-3 text-3xl font-semibold leading-tight sm:text-5xl"
             style={{ color: "var(--torres-ink)" }}
           >
-            Simule sua proposta completa.
+            Monte sua proposta. Veja como sua casa cabe no bolso.
           </h1>
           <p className="mt-3 max-w-2xl text-base" style={{ color: "var(--torres-muted)" }}>
-            Considera sinal (13%), pagamentos até as chaves (20% total),
-            financiamento bancário (80%) com regras MCMV/SBPE e FGTS. Resultado
-            em segundos.
+            Use seus dados <strong style={{ color: "var(--torres-ink)" }}>o mais reais possível</strong> —
+            renda, FGTS, quanto consegue dar de entrada. Em segundos
+            a gente devolve sinal, parcelas até as chaves, faixa MCMV/SBPE
+            e parcela bancária. <strong style={{ color: "var(--torres-ink)" }}>Sem cadastro, sem compromisso.</strong>
+            Depois você pode enviar essa proposta ao corretor pra refinar junto.
           </p>
+
+          {/* Selos de confiança: deixa explícito que não é um cadastro
+              comercial — é uma ferramenta exploratória. */}
+          <div className="mt-4 flex flex-wrap gap-2" data-testid="simulador-selos">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--torres-line)] bg-white px-3 py-1.5 text-[11px] font-semibold" style={{ color: "var(--torres-ink)" }}>
+              <CheckCircle2 className="h-3 w-3" style={{ color: "var(--torres-indigo)" }} />
+              Sem cadastro
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--torres-line)] bg-white px-3 py-1.5 text-[11px] font-semibold" style={{ color: "var(--torres-ink)" }}>
+              <CheckCircle2 className="h-3 w-3" style={{ color: "var(--torres-indigo)" }} />
+              Sem compromisso
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--torres-line)] bg-white px-3 py-1.5 text-[11px] font-semibold" style={{ color: "var(--torres-ink)" }}>
+              <CheckCircle2 className="h-3 w-3" style={{ color: "var(--torres-indigo)" }} />
+              Regras Caixa MCMV/SBPE
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--torres-line)] bg-white px-3 py-1.5 text-[11px] font-semibold" style={{ color: "var(--torres-ink)" }}>
+              <CheckCircle2 className="h-3 w-3" style={{ color: "var(--torres-indigo)" }} />
+              Resultado em segundos
+            </span>
+          </div>
+
           <div
             className="mt-4 inline-flex items-center gap-2 rounded-full border border-[color:var(--torres-line)] bg-white px-4 py-2 text-xs font-semibold"
             style={{ color: "var(--torres-muted)" }}
@@ -197,11 +221,12 @@ export default function ModuloSimulador() {
               </div>
               <div>
                 <div className="serif text-base font-semibold sm:text-lg" style={{ color: "var(--torres-ink)" }}>
-                  Quer que a gente te ajude a preencher?
+                  Travou em algum campo? A gente preenche junto.
                 </div>
                 <div className="mt-1 text-sm" style={{ color: "var(--torres-muted)" }}>
-                  Sem problema nenhum. Um corretor pega seu caso em minutos e faz a
-                  conta com você — por WhatsApp ou em uma visita rápida.
+                  Não precisa saber o valor exato do FGTS, do prazo ou da
+                  renda na ponta do lápis. Coloque o que tem em mente — e,
+                  se quiser, um corretor faz a conta com você em minutos.
                 </div>
               </div>
             </div>
@@ -264,7 +289,10 @@ export default function ModuloSimulador() {
             </Field>
 
             {/* Renda */}
-            <Field label="2. Renda familiar bruta mensal (R$)">
+            <Field
+              label="2. Renda familiar bruta mensal (R$)"
+              hint="Pode ser aproximado. Some salários, comissões e renda fixa da família."
+            >
               <input
                 type="text"
                 inputMode="numeric"
