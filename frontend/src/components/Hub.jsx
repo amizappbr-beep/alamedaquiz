@@ -67,15 +67,24 @@ export default function Hub() {
             </p>
 
             <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-              <button
-                onClick={() => goTo("empreendimento")}
-                data-testid="hub-start-btn"
-                className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-4 text-sm font-semibold uppercase tracking-[0.18em] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-15px_rgba(255,255,255,0.5)]"
-                style={{ color: "var(--torres-ink)" }}
-              >
-                Começar minha experiência
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </button>
+              <div className="flex flex-col items-start gap-1">
+                <div
+                  data-testid="hub-start-hint"
+                  className="book-next-hint flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/85"
+                  aria-hidden
+                >
+                  ✦ Vire a página
+                </div>
+                <button
+                  onClick={() => goTo("empreendimento")}
+                  data-testid="hub-start-btn"
+                  className="book-next-attention-light group inline-flex items-center gap-2 rounded-full bg-white px-7 py-4 text-sm font-semibold uppercase tracking-[0.18em] transition-all hover:-translate-y-0.5"
+                  style={{ color: "var(--torres-ink)" }}
+                >
+                  Começar minha experiência
+                  <ArrowRight className="book-next-arrow h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </button>
+              </div>
               <div className="text-[11px] uppercase tracking-[0.22em] text-white/70">
                 ⏱ leva ~ 6 minutos
               </div>

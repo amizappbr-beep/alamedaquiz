@@ -66,8 +66,14 @@ Criar uma landing page interativa / concierge digital para o empreendimento "Res
 
 ## Changelog (o que foi implementado, com datas)
 
-### 2026-02-11 (sessão atual)
-- **P0 fix — Quiz/Simulador resetando**: `BookLayout.jsx` usava `key={Math.random()}` no `<main>`, forçando remount a cada render do pai. Substituído por `key={fadeKey}` onde `fadeKey={stage}` é passado por App.js — agora o remount só ocorre quando troca de capítulo. Validado E2E: Quiz avança 1/12 → 2/12 → 3/12 corretamente.
+### 2026-02-11 (sessão atual) — Ajustes UX no Book (R3)
+- **Botão "Próximo" com pulso + seta animada + hint "Vire a página"**: aplicado na Capa (hub-start-btn, variante light) e na 2ª página (BookFooter), para acostumar o usuário com o formato livro digital — ainda incomum no mercado imobiliário.
+- **Toast de pontuação reforçado**: ao concluir a página anterior à que desbloqueia o corretor (Empreendimento → Casas), o toast informa "Você poderá acionar seu corretor assim que virar a próxima página".
+- **Marcação evidente da casa escolhida**: ring colorido + selo "Sua escolha" + reforço pós-escolha com Trophy e CTA "Continuar minha jornada" levando direto a Diferenciais.
+- **Simulador convidativo**: H1 reescrito ("Monte sua proposta. Veja como sua casa cabe no bolso."), 4 selos de confiança ("Sem cadastro / Sem compromisso / Regras Caixa MCMV-SBPE / Resultado em segundos"), microcopy nos campos pedindo dados reais aproximados, banner de ajuda com nova copy ("Travou em algum campo? A gente preenche junto.").
+- **Lead Warehouse no Hub mais destacado**: card abre por padrão (`defaultOpen=true`), border-2 indigo + gradient, selo "Acesso antecipado", nova copy "O Alameda 500 não é seu perfil? A Torres tem mais a caminho." + subtitle falando em **primeira mão** e **exclusividade**.
+
+### 2026-02-11 (sessão atual) — CRM Release 2
 - **CRM Release 2 — Sales Channels + Ownership**:
   - Backend: novo `routers/brokers.py` (CRUD + `pick_round_robin_broker` + counter helpers); `PATCH /admin/leads/{id}/owner` no admin router; filtros `?owner=` e `?channel=` em `/admin/leads`; novas métricas `sla_atrasados`, `brokers_ativos`, `leads_sem_dono` em `/admin/metrics`.
   - Frontend: aba "Corretores" no admin (`BrokersView.jsx`), `BrokerAvatar.jsx`, dropdown de corretor no Lead Drawer, badges de SLA visual (Atrasado/Atenção) nos lead cards, tiles "Sem dono" e "SLA atrasado" no header.

@@ -202,6 +202,31 @@ code {
     animation-play-state: paused;
 }
 
+/* Variante "claro sobre escuro" — usada no hub-start-btn (botão branco
+   sobre hero noturno). Mesmo gesto de pulso, mas com cor de halo branca. */
+@keyframes book-next-pulse-light {
+    0%, 100% {
+        box-shadow:
+            0 12px 28px -12px rgba(255, 255, 255, 0.35),
+            0 0 0 0 rgba(255, 255, 255, 0.45);
+    }
+    50% {
+        box-shadow:
+            0 16px 32px -10px rgba(255, 255, 255, 0.55),
+            0 0 0 12px rgba(255, 255, 255, 0);
+    }
+}
+.book-next-attention-light {
+    animation: book-next-pulse-light 2.2s ease-in-out infinite;
+}
+.book-next-attention-light .book-next-arrow {
+    animation: book-next-arrow-slide 1.8s ease-in-out infinite;
+}
+.book-next-attention-light:hover,
+.book-next-attention-light:hover .book-next-arrow {
+    animation-play-state: paused;
+}
+
 /* Hint "vire a página" — texto leve em cima do botão para acostumar
    o usuário ao formato livro digital. Aparece apenas nas 2 primeiras
    páginas (capa + empreendimento) via prop. */
