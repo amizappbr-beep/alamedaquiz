@@ -387,6 +387,54 @@ async def admin_warehouse(
     }
 
 
+class ResetPayload(BaseModel):
+    """Confirmação dupla para zerar dados do CRM. Exige a frase exata
+    'APAGAR TUDO' para evitar disparo acidental via curl/navegação."""
+    confirmacao: str
+    coletions: Optional[List[Literal["leads", "brokers", "login_attempts"]]] = None
+
+
+@router.post("/reset")
+async def admin_reset(
+    payload: ResetPayload,
+    request: Request,
+    current=Depends(get_current_admin),
+):
+    """Zera coleções operacionais do CRM (leads, brokers e/ou
+    login_attempts). NUNCA apaga `admin_users`.
+
+    Proteções:
+    - Exige login JWT de admin
+    - Exige `confirmacao == "APAGAR TUDO"` no body
+    - Sem confirmação correta retorna 400
+
+    Padrão (sem `coletions`): apaga leads + brokers. Mantém login_attempts.
+    """
+    if payload.confirmacao != "APAGAR TUDO":
+        raise HTTPException(
+            status_code=400,
+            detail="Confirmação inválida. Envie {'confirmacao': 'APAGAR TUDO'}.",
+        )
+    db = get_db(request)
+    targets = payload.coletions or ["leads", "brokers"]
+    result: Dict[str, int] = {}
+    if "leads" in targets:
+        r = await db.leads.delete_many({})
+        result["leads"] = r.deleted_count
+    if "brokers" in targets:
+        r = await db.brokers.delete_many({})
+        result["brokers"] = r.deleted_count
+    if "login_attempts" in targets:
+        r = await db.login_attempts.delete_many({})
+        result["login_attempts"] = r.deleted_count
+    return {
+        "ok": True,
+        "apagados": result,
+        "by": current["email"],
+        "at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 @router.get("/metrics")
 async def admin_metrics(request: Request, current=Depends(get_current_admin)):
     db = get_db(request)
