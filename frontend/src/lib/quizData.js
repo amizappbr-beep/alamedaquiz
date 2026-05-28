@@ -246,7 +246,7 @@ export function gerarInsights(answers) {
   return insights;
 }
 
-export const WHATSAPP_PHONE = "5527996610579";
+export const WHATSAPP_PHONE = "5527998336937";
 
 // Formata BRL para mensagens (sem dependência externa, aceita number ou null)
 function brl(v) {
