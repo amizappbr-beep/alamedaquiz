@@ -52,6 +52,26 @@ function useScrollTopOnStageChange(stage, registered) {
 function Router() {
   const { stage, registered } = useJourney();
   useScrollTopOnStageChange(stage, registered);
+  // Sincroniza document.title com o capítulo atual — facilita análise
+  // de funil em Hotjar/GA4 onde cada URL ganha título legível.
+  useLayoutEffect(() => {
+    const titles = {
+      hub: "Alameda 500 · Capa",
+      empreendimento: "Alameda 500 · O empreendimento",
+      casas: "Alameda 500 · Sua casa ideal",
+      localizacao: "Alameda 500 · Localização",
+      perfil: "Alameda 500 · Seu perfil",
+      simulador: "Alameda 500 · Simulação",
+      resultado_simulacao: "Alameda 500 · Resultado da simulação",
+      corretor: "Alameda 500 · Falar com corretor",
+      agendamento: "Alameda 500 · Agendar visita",
+      imediato: "Alameda 500 · Falar agora",
+      obrigado: "Alameda 500 · Obrigado",
+    };
+    if (typeof document !== "undefined") {
+      document.title = titles[stage] || "Alameda 500 · Concierge Digital";
+    }
+  }, [stage]);
   // Gate removido da entrada — captura agora acontece contextualmente
   // no Quiz (Perfil) e no Corretor. A Capa é aberta livre para reduzir
   // evasão na primeira impressão.

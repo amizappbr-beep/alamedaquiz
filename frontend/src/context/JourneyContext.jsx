@@ -40,9 +40,71 @@ const INITIAL = {
   opportunityOptIn: false,
 };
 
+// Sincronia stage <-> URL.
+// Cada capítulo do Book tem um path único pra facilitar tracking de funil
+// no Hotjar, Meta Pixel, GA4 e Analytics em geral.
+const STAGE_TO_PATH = {
+  hub: "/",
+  empreendimento: "/empreendimento",
+  casas: "/casas",
+  localizacao: "/localizacao",
+  perfil: "/perfil",
+  simulador: "/simulador",
+  resultado_simulacao: "/simulador/resultado",
+  corretor: "/corretor",
+  agendamento: "/agendamento",
+  imediato: "/falar-agora",
+  obrigado: "/obrigado",
+};
+const PATH_TO_STAGE = Object.fromEntries(
+  Object.entries(STAGE_TO_PATH).map(([s, p]) => [p, s])
+);
+
+function stageFromCurrentPath() {
+  if (typeof window === "undefined") return null;
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  // Rotas administrativas não devem virar stage da jornada.
+  if (/^\/(admin|crm|torres-admin|torres-crm|painel)/.test(path)) return null;
+  return PATH_TO_STAGE[path] || null;
+}
+
+function pathFromStage(stage) {
+  return STAGE_TO_PATH[stage] || "/";
+}
+
 export function JourneyProvider({ children }) {
-  const [state, setState] = useState(() => readStorage() || INITIAL);
+  const [state, setState] = useState(() => {
+    const stored = readStorage() || INITIAL;
+    // Se o usuário entrou diretamente por uma URL específica (ex:
+    // /casas, /simulador), respeita esse stage no boot.
+    const fromUrl = stageFromCurrentPath();
+    if (fromUrl) return { ...stored, stage: fromUrl };
+    return stored;
+  });
   const [tick, setTick] = useState(0);
+
+  // Sincroniza stage -> URL sempre que o stage muda.
+  // Usa pushState para criar histórico (permite Voltar do navegador).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const desiredPath = pathFromStage(state.stage);
+    if (window.location.pathname !== desiredPath) {
+      window.history.pushState({ stage: state.stage }, "", desiredPath);
+    }
+  }, [state.stage]);
+
+  // Escuta Back/Forward do navegador para sincronizar de volta.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = () => {
+      const fromUrl = stageFromCurrentPath();
+      if (fromUrl) {
+        setState((s) => (s.stage === fromUrl ? s : { ...s, stage: fromUrl }));
+      }
+    };
+    window.addEventListener("popstate", handler);
+    return () => window.removeEventListener("popstate", handler);
+  }, []);
 
   // Persist
   useEffect(() => {
