@@ -8,13 +8,11 @@ import ModuloCasas from "./components/modules/ModuloCasas";
 import ModuloPerfil from "./components/modules/ModuloPerfil";
 import ModuloSimulador from "./components/modules/ModuloSimulador";
 import ModuloResultadoSimulacao from "./components/modules/ModuloResultadoSimulacao";
-import ModuloDiferenciais from "./components/modules/ModuloDiferenciais";
 import ModuloCorretor from "./components/modules/ModuloCorretor";
 import ModuloAgendamento from "./components/modules/ModuloAgendamento";
 import ModuloImediato from "./components/modules/ModuloImediato";
 import ModuloObrigado from "./components/modules/ModuloObrigado";
 import ModuloLocalizacao from "./components/modules/ModuloLocalizacao";
-import Gate from "./components/Gate";
 import AdminApp from "./admin/AdminApp";
 import BookLayout from "./components/book/BookLayout";
 
@@ -54,7 +52,9 @@ function useScrollTopOnStageChange(stage, registered) {
 function Router() {
   const { stage, registered } = useJourney();
   useScrollTopOnStageChange(stage, registered);
-  if (!registered) return <Gate />;
+  // Gate removido da entrada — captura agora acontece contextualmente
+  // no Quiz (Perfil) e no Corretor. A Capa é aberta livre para reduzir
+  // evasão na primeira impressão.
 
   // Stages que NÃO entram no Book chrome (header/footer):
   //  - "hub" tem hero próprio em tela cheia (a "capa")
@@ -84,9 +84,6 @@ function Router() {
       break;
     case "resultado_simulacao":
       content = <ModuloResultadoSimulacao />;
-      break;
-    case "diferenciais":
-      content = <ModuloDiferenciais />;
       break;
     case "localizacao":
       content = <ModuloLocalizacao />;

@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useJourney } from "../../context/JourneyContext";
 import { GALLERY_ITEMS, ALAMEDA_IMAGES } from "../../lib/assets";
-import { X, ArrowRight, ChevronLeft, ChevronRight, Check as CheckIcon } from "lucide-react";
+import { DIFERENCIAIS } from "../../lib/conteudo";
+import { X, ArrowRight, ChevronLeft, ChevronRight, Check as CheckIcon, Sparkles } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import ModuleFooterCTA from "../ModuleFooterCTA";
 
 export default function ModuloEmpreendimento() {
@@ -161,6 +163,58 @@ export default function ModuloEmpreendimento() {
               />
             </div>
           </button>
+        </div>
+
+        {/* Diferenciais (mesclado a partir do antigo Cap. 03).
+            Aparece como segunda seção do Empreendimento — reforça motivos
+            de compra antes do usuário sair pra escolher casa. */}
+        <div className="mt-14 fade-up" data-testid="empreendimento-diferenciais">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-3.5 w-3.5" style={{ color: "var(--torres-indigo)" }} />
+            <div className="text-[11px] uppercase tracking-[0.22em]" style={{ color: "var(--torres-indigo)" }}>
+              Por que o Alameda 500 se destaca
+            </div>
+          </div>
+          <h2 className="serif mt-2 text-2xl font-semibold sm:text-3xl" style={{ color: "var(--torres-ink)" }}>
+            10 motivos pra escolher.
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm" style={{ color: "var(--torres-muted)" }}>
+            Cada detalhe foi pensado pra melhorar seu dia a dia — da economia
+            de condomínio à previsão para ar-split.
+          </p>
+
+          <div
+            className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            data-testid="diferenciais-grid"
+          >
+            {DIFERENCIAIS.map((d, idx) => {
+              const Icon = LucideIcons[d.icon] || LucideIcons.Sparkles;
+              return (
+                <div
+                  key={d.id}
+                  data-testid={`diferencial-${d.id}`}
+                  className="group relative overflow-hidden rounded-2xl border border-[color:var(--torres-line)] bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[color:var(--torres-indigo)]/60 hover:shadow-[0_20px_40px_-24px_rgba(100,113,162,0.45)] fade-up"
+                  style={{ animationDelay: `${idx * 40}ms` }}
+                >
+                  <div
+                    className="flex h-10 w-10 items-center justify-center rounded-xl transition-transform group-hover:scale-110"
+                    style={{
+                      backgroundColor: "rgba(100,113,162,0.08)",
+                      color: "var(--torres-indigo)",
+                    }}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <h3 className="serif mt-3 text-base font-semibold leading-snug" style={{ color: "var(--torres-ink)" }}>
+                    {d.titulo}
+                  </h3>
+                  <p className="mt-1.5 text-sm leading-relaxed" style={{ color: "var(--torres-muted)" }}>
+                    {d.descricao}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 

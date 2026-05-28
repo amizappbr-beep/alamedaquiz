@@ -65,9 +65,8 @@ export function JourneyProvider({ children }) {
   const leadScore = useMemo(() => {
     let score = 0;
     const mods = new Set(state.modulos_visitados);
-    if (mods.has("empreendimento")) score += 10;
+    if (mods.has("empreendimento")) score += 15; // herdou os 5pts antigos de diferenciais
     if (mods.has("casas") && state.casa_preferida) score += 15;
-    if (mods.has("diferenciais")) score += 5;
     if (mods.has("perfil") && classification) {
       score +=
         classification === "quente" ? 30 : classification === "morno" ? 20 : 10;

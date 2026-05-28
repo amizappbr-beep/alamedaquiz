@@ -6,7 +6,6 @@ import {
   BookOpen,
   Building2,
   Home as HomeIcon,
-  Sparkles,
   MapPin,
   User,
   Calculator,
@@ -14,8 +13,12 @@ import {
 } from "lucide-react";
 
 // stage = chave técnica usada no JourneyContext.stage
-// number = página visível pro usuário (1 a 8)
+// number = página visível pro usuário (1 a 7)
 // nextLabel = copy do CTA principal "Próxima etapa" quando ESSA é a página atual
+//
+// IMPORTANTE: o capítulo "diferenciais" foi MESCLADO em "empreendimento"
+// (Cap. 01) — agora os diferenciais aparecem dentro da apresentação do
+// empreendimento, eliminando uma página solta e reduzindo o atrito.
 export const BOOK_PAGES = [
   {
     stage: "hub",
@@ -29,10 +32,10 @@ export const BOOK_PAGES = [
     stage: "empreendimento",
     number: 2,
     label: "O empreendimento",
-    title: "Conheça o Alameda 500",
+    title: "Conheça o Alameda 500 e seus diferenciais",
     icon: Building2,
     nextLabel: "Escolher minha casa ideal",
-    rewardPts: 15,
+    rewardPts: 25, // herdou os 10 pts antigos de "diferenciais"
   },
   {
     stage: "casas",
@@ -40,22 +43,13 @@ export const BOOK_PAGES = [
     label: "Sua casa ideal",
     title: "3 modelos exclusivos",
     icon: HomeIcon,
-    nextLabel: "Ver os diferenciais",
+    nextLabel: "Conhecer a localização",
     rewardPts: 20,
     unlocksBroker: true, // chega aqui → Falar com corretor liberado
   },
   {
-    stage: "diferenciais",
-    number: 4,
-    label: "Diferenciais",
-    title: "O que torna especial",
-    icon: Sparkles,
-    nextLabel: "Conhecer a localização",
-    rewardPts: 10,
-  },
-  {
     stage: "localizacao",
-    number: 5,
+    number: 4,
     label: "Localização",
     title: "Bairro Alterosas, Serra/ES",
     icon: MapPin,
@@ -64,7 +58,7 @@ export const BOOK_PAGES = [
   },
   {
     stage: "perfil",
-    number: 6,
+    number: 5,
     label: "Seu perfil",
     title: "Vamos te conhecer",
     icon: User,
@@ -73,7 +67,7 @@ export const BOOK_PAGES = [
   },
   {
     stage: "simulador",
-    number: 7,
+    number: 6,
     label: "Simulação",
     title: "Suas condições reais",
     icon: Calculator,
@@ -82,7 +76,7 @@ export const BOOK_PAGES = [
   },
   {
     stage: "corretor",
-    number: 8,
+    number: 7,
     label: "Corretor",
     title: "Próximo passo com a Torres",
     icon: Handshake,

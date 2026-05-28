@@ -354,3 +354,23 @@ code {
         gap: inherit;
     }
 }
+
+
+/* ============================================================
+   Emergent badge — ajuste mobile
+   ============================================================
+   No mobile (< 640px), o selo "Made with Emergent" (right: 16px,
+   bottom: 16px) sobreponha o botão "Próxima página" do BookFooter
+   sticky. Movemos o selo para a esquerda no mobile para liberar
+   o canto direito (onde fica o CTA principal).
+   ============================================================ */
+@media (max-width: 639px) {
+    #emergent-badge {
+        right: auto !important;
+        left: 12px !important;
+        bottom: 78px !important;
+        transform: scale(0.85);
+        transform-origin: left bottom;
+        opacity: 0.85;
+    }
+}

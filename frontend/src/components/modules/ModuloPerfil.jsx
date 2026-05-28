@@ -7,13 +7,50 @@ import {
   getQuestionsByBloco,
 } from "../../lib/quizData";
 import { getPrevStage } from "../../lib/bookPages";
-import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Sparkles, Shield, Lock } from "lucide-react";
+
+function formatPhone(raw) {
+  const digits = raw.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits.length ? `(${digits}` : "";
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
 
 export default function ModuloPerfil() {
-  const { goTo, setQuizAnswer, quiz_answers, markModuloVisitado } =
-    useJourney();
+  const {
+    goTo,
+    setQuizAnswer,
+    quiz_answers,
+    markModuloVisitado,
+    name: ctxName,
+    phone: ctxPhone,
+    setContato,
+  } = useJourney();
   const [current, setCurrent] = useState(0); // index global 0..11
   const [showInsight, setShowInsight] = useState(false); // true após bloco 1
+
+  // Captura de identidade — substitui o antigo Gate. Aparece SOMENTE
+  // quando o usuário ainda não preencheu nome+WhatsApp (ex: chegou
+  // diretamente pelo book sem passar por outro fluxo).
+  const identityDone =
+    !!(ctxName && ctxName.trim()) &&
+    !!ctxPhone &&
+    ctxPhone.replace(/\D/g, "").length >= 10;
+  const [showIdentity, setShowIdentity] = useState(!identityDone);
+  const [idName, setIdName] = useState(ctxName || "");
+  const [idPhone, setIdPhone] = useState(ctxPhone || "");
+  const [idError, setIdError] = useState("");
+
+  const submitIdentity = (e) => {
+    e.preventDefault();
+    if (!idName.trim()) return setIdError("Informe seu nome.");
+    if (idPhone.replace(/\D/g, "").length < 10)
+      return setIdError("Informe um WhatsApp válido com DDD.");
+    setIdError("");
+    setContato({ name: idName.trim(), phone: idPhone.trim() });
+    setShowIdentity(false);
+  };
 
   const bloco1 = getQuestionsByBloco(1);
   const totalQ = QUIZ_QUESTIONS.length;
@@ -140,6 +177,120 @@ export default function ModuloPerfil() {
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Captura inline de identidade — substitui o antigo Gate da Capa.
+  // Aparece como passo 0 do Quiz quando o usuário ainda não preencheu
+  // contato em nenhum lugar.
+  if (showIdentity) {
+    return (
+      <section
+        data-testid="modulo-perfil-identidade"
+        className="flex min-h-[calc(100vh-60px)] w-full items-center justify-center bg-[color:var(--torres-cream)] px-6 py-10 sm:px-10 lg:px-16"
+      >
+        <div className="mx-auto w-full max-w-xl">
+          <div className="fade-up">
+            <div
+              className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold"
+              style={{
+                borderColor: "rgba(100,113,162,0.3)",
+                backgroundColor: "rgba(100,113,162,0.05)",
+                color: "var(--torres-indigo-deep)",
+              }}
+            >
+              <Sparkles className="h-3 w-3" />
+              Quase lá — vamos personalizar
+            </div>
+            <h1
+              className="serif mt-4 text-3xl font-semibold leading-tight sm:text-4xl"
+              style={{ color: "var(--torres-ink)" }}
+            >
+              Antes do quiz, em qual nome posso te chamar?
+            </h1>
+            <p className="mt-3 text-base" style={{ color: "var(--torres-muted)" }}>
+              A partir daqui o atendimento começa a ser personalizado pelo seu
+              perfil. Em 12 perguntas rápidas a gente entende seu momento e
+              prepara a melhor proposta — no seu nome.
+            </p>
+
+            <form
+              onSubmit={submitIdentity}
+              data-testid="perfil-identidade-form"
+              className="mt-7 space-y-4"
+            >
+              <div>
+                <label
+                  className="mb-1.5 block text-[11px] uppercase tracking-[0.22em]"
+                  style={{ color: "var(--torres-muted)" }}
+                >
+                  Seu nome
+                </label>
+                <input
+                  type="text"
+                  value={idName}
+                  onChange={(e) => setIdName(e.target.value)}
+                  placeholder="Como podemos te chamar?"
+                  data-testid="perfil-identidade-nome"
+                  autoFocus
+                  className="w-full rounded-xl border border-[color:var(--torres-line)] bg-white px-4 py-3.5 text-base outline-none transition-all focus:border-[color:var(--torres-indigo)] focus:ring-2 focus:ring-[color:var(--torres-indigo)]/20"
+                />
+              </div>
+              <div>
+                <label
+                  className="mb-1.5 block text-[11px] uppercase tracking-[0.22em]"
+                  style={{ color: "var(--torres-muted)" }}
+                >
+                  WhatsApp
+                </label>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  value={idPhone}
+                  onChange={(e) => setIdPhone(formatPhone(e.target.value))}
+                  placeholder="(27) 99999-9999"
+                  data-testid="perfil-identidade-whatsapp"
+                  className="w-full rounded-xl border border-[color:var(--torres-line)] bg-white px-4 py-3.5 text-base outline-none transition-all focus:border-[color:var(--torres-indigo)] focus:ring-2 focus:ring-[color:var(--torres-indigo)]/20"
+                />
+                <div
+                  className="mt-1.5 flex items-center gap-1.5 text-[11px]"
+                  style={{ color: "var(--torres-muted)" }}
+                >
+                  <Lock className="h-3 w-3" />
+                  Usado só para retomar sua jornada e atendimento.
+                </div>
+              </div>
+
+              {idError && (
+                <div
+                  data-testid="perfil-identidade-error"
+                  className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700"
+                >
+                  {idError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                data-testid="perfil-identidade-submit"
+                className="btn-primary-torres group inline-flex w-full items-center justify-center gap-3"
+              >
+                Começar o quiz
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </button>
+
+              <div
+                className="flex items-start gap-2 pt-1 text-xs"
+                style={{ color: "var(--torres-muted)" }}
+              >
+                <Shield className="mt-0.5 h-3 w-3 shrink-0" />
+                Seus dados são usados apenas para atendimento. Sem spam, sem
+                compartilhamento.
+              </div>
+            </form>
           </div>
         </div>
       </section>
